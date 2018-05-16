@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 
-size_t read(BYTE* buffer, size_t BUFFER_SIZE)
+size_t read_file(BYTE *buffer, size_t BUFFER_SIZE)
 {
     FILE *f;
     size_t read_bytes = 0;
@@ -27,7 +27,7 @@ int main(int argc, char** argv)
     const size_t BUFFER_SIZE = 100000;
     BYTE* buffer = (BYTE*) malloc(BUFFER_SIZE);
 
-    size_t read_bytes = read(buffer, BUFFER_SIZE);
+    size_t read_bytes = read_file(buffer, BUFFER_SIZE);
 
     printf("Read %zu\n", read_bytes);
 

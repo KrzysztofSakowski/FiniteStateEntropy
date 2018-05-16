@@ -1,16 +1,21 @@
 #ifndef FSE_ENCRYPTOR_H
 #define FSE_ENCRYPTOR_H
 
+#define FSE_STATIC_LINKING_ONLY
 #include "fse.h"
 
 #ifdef __cplusplus
 extern "C"{
 #endif
 
+typedef FSE_FUNCTION_TYPE ShuffleType;
+typedef FSE_DECODE_TYPE UnshuffleType;
 
-void pre_compression_shuffle(FSE_FUNCTION_TYPE* ptr, unsigned SIZE);
+void setShuffle(size_t shuffle);
 
-void pre_decompression_shuffle(FSE_decode_t* ptr, unsigned SIZE);
+void pre_compression_shuffle(ShuffleType* ptr, size_t SIZE);
+
+void pre_decompression_shuffle(UnshuffleType* ptr, size_t SIZE);
 
 #ifdef __cplusplus
 }

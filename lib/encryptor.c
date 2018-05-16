@@ -1,39 +1,75 @@
 #include "encryptor.h"
 
-static const int SHUFFLE_BLOCK_SIZE = 8; // required to be even
-static const int MAGIC_SIZE = 4;
+static const int SHUFFLE_BLOCK_SIZE = 8;
+static int MAGIC_SIZE = 4;
 
 
-void pre_compression_shuffle(FSE_FUNCTION_TYPE* ptr, const unsigned SIZE)
+void swap(ShuffleType* a, ShuffleType* b)
 {
-    int i;
+    ShuffleType tmp = *a;
+    *a = *b;
+    *b = tmp;
+}
 
-    unsigned char buffer[sizeof(FSE_FUNCTION_TYPE) * SHUFFLE_BLOCK_SIZE];
+void swap2(UnshuffleType* a, UnshuffleType* b)
+{
+    UnshuffleType tmp = *a;
+    *a = *b;
+    *b = tmp;
+}
 
-    for (i = 0; i+SHUFFLE_BLOCK_SIZE <= SIZE; i += SHUFFLE_BLOCK_SIZE)
+void rotate(ShuffleType* first, ShuffleType* middle,
+             ShuffleType* last)
+{
+    ShuffleType* next = middle;
+    while (first!=next)
     {
-        int shuffle = MAGIC_SIZE;
-        shuffle %= SHUFFLE_BLOCK_SIZE;
-
-        memcpy(buffer, ptr+i+SHUFFLE_BLOCK_SIZE-shuffle, shuffle * sizeof(FSE_FUNCTION_TYPE));
-        memmove(ptr+i+shuffle, ptr+i, (SHUFFLE_BLOCK_SIZE-shuffle) * sizeof(FSE_FUNCTION_TYPE));
-        memcpy(ptr+i, buffer, shuffle * sizeof(FSE_FUNCTION_TYPE));
+        swap (first++,next++);
+        if (next==last) next=middle;
+        else if (first==middle) middle=next;
     }
 }
 
-void pre_decompression_shuffle(FSE_decode_t *ptr, unsigned SIZE)
+void rotate2(UnshuffleType* first, UnshuffleType* middle,
+              UnshuffleType* last)
+{
+    UnshuffleType* next = middle;
+    while (first!=next)
+    {
+        swap2 (first++, next++);
+        if (next==last) next=middle;
+        else if (first==middle) middle=next;
+    }
+}
+
+
+void pre_compression_shuffle(ShuffleType* ptr, const size_t SIZE)
 {
     int i;
-
-    FSE_decode_t buffer[SHUFFLE_BLOCK_SIZE];
 
     for (i = 0; i+SHUFFLE_BLOCK_SIZE <= SIZE; i += SHUFFLE_BLOCK_SIZE)
     {
         int shuffle = MAGIC_SIZE;
         shuffle %= SHUFFLE_BLOCK_SIZE;
 
-        memcpy(buffer, ptr+i+shuffle, shuffle * sizeof(FSE_decode_t));
-        memmove(ptr+i+shuffle, ptr+i, (SHUFFLE_BLOCK_SIZE-shuffle) * sizeof(FSE_decode_t));
-        memcpy(ptr+i, buffer, shuffle * sizeof(FSE_decode_t));
+        rotate(ptr+i, ptr+i+shuffle, ptr+i+SHUFFLE_BLOCK_SIZE);
     }
+}
+
+void pre_decompression_shuffle(UnshuffleType *ptr, const size_t SIZE)
+{
+    int i;
+
+    for (i = 0; i+SHUFFLE_BLOCK_SIZE <= SIZE; i += SHUFFLE_BLOCK_SIZE)
+    {
+        int shuffle = MAGIC_SIZE;
+        shuffle %= SHUFFLE_BLOCK_SIZE;
+
+        rotate2(ptr+i, ptr+i+shuffle, ptr+i+SHUFFLE_BLOCK_SIZE);
+    }
+}
+
+void setShuffle(size_t shuffle)
+{
+    MAGIC_SIZE = shuffle;
 }
