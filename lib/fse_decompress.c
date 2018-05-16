@@ -43,6 +43,7 @@
 #define FSE_STATIC_LINKING_ONLY
 #include "fse.h"
 #include "error_private.h"
+#include "encryptor.h"
 
 
 /* **************************************************************
@@ -134,6 +135,8 @@ size_t FSE_buildDTable(FSE_DTable* dt, const short* normalizedCounter, unsigned 
         }   }
         if (position!=0) return ERROR(GENERIC);   /* position must reach all cells once, otherwise normalizedCounter is incorrect */
     }
+
+    pre_decompression_shuffle(tableDecode, tableSize);
 
     /* Build Decoding table */
     {   U32 u;

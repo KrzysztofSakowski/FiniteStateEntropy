@@ -20,6 +20,8 @@ set(LIB_SRC
         lib/mem.h
         lib/error_private.h
         lib/error_public.h
+        lib/encryptor.h
+        lib/encryptor.c
         )
 
 set(PROGRAM_SRC
@@ -33,10 +35,18 @@ set(PROGRAM_SRC
         programs/fileio.h
         )
 
-add_executable(commandline    ${LIB_SRC} ${PROGRAM_SRC} programs/commandline.c)
-add_executable(fullbench      ${LIB_SRC} ${PROGRAM_SRC} programs/fullbench.c)
-add_executable(probaGenerator ${LIB_SRC} ${PROGRAM_SRC} programs/probaGenerator.c)
-add_executable(aes_test       ${LIB_SRC} ${PROGRAM_SRC} programs/aes_test.c)
-add_executable(workspace      ${LIB_SRC} ${PROGRAM_SRC} programs/workspace.c)
+add_library(fse ${LIB_SRC})
 
-target_link_libraries(aes_test ${OPENSSL_LIBRARIES})
+add_executable(commandline    ${PROGRAM_SRC} programs/commandline.c)
+add_executable(fullbench      ${PROGRAM_SRC} programs/fullbench.c)
+add_executable(probaGenerator ${PROGRAM_SRC} programs/probaGenerator.c)
+add_executable(aes_test       ${PROGRAM_SRC} programs/aes_test.c)
+add_executable(workspace      ${PROGRAM_SRC} programs/workspace.c)
+
+target_link_libraries(commandline    ${OPENSSL_LIBRARIES} fse)
+target_link_libraries(fullbench      ${OPENSSL_LIBRARIES} fse)
+target_link_libraries(probaGenerator ${OPENSSL_LIBRARIES} fse)
+target_link_libraries(aes_test       ${OPENSSL_LIBRARIES} fse)
+target_link_libraries(workspace      ${OPENSSL_LIBRARIES} fse)
+
+add_subdirectory(tests)

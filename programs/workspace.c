@@ -31,6 +31,10 @@ int main(int argc, char** argv)
 
     printf("Read %zu\n", read_bytes);
 
+    buffer[0] = 17;
+    buffer[1] = 17;
+    buffer[2] = 255;
+
     // compress
     BYTE* compressed_buffer = (BYTE*) malloc(BUFFER_SIZE);
     size_t compression_result = FSE_compress(compressed_buffer, BUFFER_SIZE, buffer, read_bytes);
