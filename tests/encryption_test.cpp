@@ -1,21 +1,15 @@
 #include "gtest/gtest.h"
 
+#include <fse.h>
 #include <encryptor.h>
 
 #include <vector>
 #include <algorithm>
-#include <fse.h>
 
 
 class EncryptorTest : public testing::Test {
 protected:
     const static int SHUFFLE_STEP = 7;
-    const static int SHUFFLE_BLOCK_SIZE = 8;
-
-    void SetUp() override
-    {
-        setShuffle(SHUFFLE_STEP);
-    }
 };
 
 TEST_F(EncryptorTest, Shuffle)
@@ -26,30 +20,12 @@ TEST_F(EncryptorTest, Shuffle)
 
     auto data2 = data;
 
-    pre_compression_shuffle(data.data(), data.size());
+    rotate(data.data(), data.data()+SHUFFLE_STEP,  data.data()+data.size());
 
     std::rotate(data2.begin(), data2.begin()+SHUFFLE_STEP, data2.end());
 
     ASSERT_EQ(data, data2);
 }
-
-TEST_F(EncryptorTest, Shuffle2)
-{
-    std::vector<ShuffleType> data = {
-            0, 1, 2, 3, 4, 5, 6, 7,
-            0, 1, 2, 3, 4, 5, 6, 7
-    };
-
-    auto data2 = data;
-
-    pre_compression_shuffle(data.data(), data.size());
-
-    std::rotate(data2.begin(), data2.begin()+SHUFFLE_STEP, data2.end()-SHUFFLE_BLOCK_SIZE);
-    std::rotate(data2.begin()+SHUFFLE_BLOCK_SIZE, data2.begin()+SHUFFLE_BLOCK_SIZE+SHUFFLE_STEP, data2.end());
-
-    ASSERT_EQ(data, data2);
-}
-
 
 TEST_F(EncryptorTest, Unshuffle)
 {
@@ -59,7 +35,7 @@ TEST_F(EncryptorTest, Unshuffle)
 
     auto data2 = data;
 
-    pre_decompression_shuffle(data.data(), 8);
+    rotate2(data.data(), data.data()+SHUFFLE_STEP,  data.data()+data.size());
 
     std::rotate(data2.begin(), data2.begin()+SHUFFLE_STEP, data2.end());
 

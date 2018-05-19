@@ -11,11 +11,13 @@ extern "C"{
 typedef FSE_FUNCTION_TYPE ShuffleType;
 typedef FSE_DECODE_TYPE UnshuffleType;
 
-void setShuffle(size_t shuffle);
-
 void pre_compression_shuffle(ShuffleType* ptr, size_t SIZE);
 
 void pre_decompression_shuffle(UnshuffleType* ptr, size_t SIZE);
+
+void rotate(ShuffleType* first, ShuffleType* middle, ShuffleType* last);
+
+void rotate2(UnshuffleType* first, UnshuffleType* middle, UnshuffleType* last);
 
 #ifdef __cplusplus
 }
