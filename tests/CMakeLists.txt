@@ -24,4 +24,4 @@ set(test_SRCS
         )
 
 add_executable(runUnitTests gtest.cpp ${test_SRCS})
-target_link_libraries(runUnitTests gtest gmock fse)
+target_link_libraries(runUnitTests gtest fse ${OPENSSL_LIBRARIES} ${sodium_LIBRARY_RELEASE})

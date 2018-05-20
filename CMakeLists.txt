@@ -3,8 +3,13 @@ project(fse)
 
 include_directories(lib/)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+
 find_package(OpenSSL REQUIRED)
 include_directories(${OpenSSL_INCLUDE_DIR})
+
+find_package(sodium REQUIRED)
+include_directories(${sodium_INCLUDE_DIR})
 
 set(LIB_SRC
         lib/fse_decompress.c
