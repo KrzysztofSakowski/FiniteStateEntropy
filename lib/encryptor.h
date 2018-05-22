@@ -19,9 +19,11 @@ void rotate(ShuffleType* first, ShuffleType* middle, ShuffleType* last);
 
 void rotate2(UnshuffleType* first, UnshuffleType* middle, UnshuffleType* last);
 
-int aes_encrypt(unsigned char* dst, const unsigned char* src, size_t SRC_SIZE);
+int aes_encrypt(unsigned char *dst, const unsigned char *src, size_t SRC_SIZE,
+                const unsigned char* key, const unsigned char* iv);
 
-int aes_decrypt(unsigned char* dst, const unsigned char* src, size_t SRC_SIZE);
+int aes_decrypt(unsigned char* dst, const unsigned char* src, size_t SRC_SIZE,
+                const unsigned char* key, const unsigned char* iv);
 
 int calc_seed(const unsigned char *key_data, size_t KEY_SIZE,
               const unsigned char* salt, size_t SALT_SIZE, uint32_t BLOCK_ID, unsigned char* out_sha);

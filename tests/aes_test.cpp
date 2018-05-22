@@ -9,27 +9,31 @@
 
 TEST(AESTest, Encrypt)
 {
+    const unsigned char key[32] = {
+            1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8
+    };
+    const unsigned char iv[32] = {
+            1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8
+    };
     const char *data = "3fasf34sv4afg4g3bhmjymd5vhtst";
     const size_t SIZE = strlen(data);
-    auto encrypted_data = (char*)malloc(SIZE + AES_BLOCK_SIZE);
+
+    auto encrypted_data = std::make_unique<unsigned char[]>(SIZE + AES_BLOCK_SIZE);
 
     for (size_t i = 0; i <SIZE; ++i)
         encrypted_data[i] = 0;
 
-    auto result = aes_encrypt((unsigned char*)encrypted_data, (const unsigned char*)data, SIZE);
+    auto result = aes_encrypt(encrypted_data.get(), (const unsigned char*)data, SIZE, key, iv);
 
-    ASSERT_TRUE(std::any_of(encrypted_data, encrypted_data+SIZE, [](char c) {
+    ASSERT_TRUE(std::any_of(encrypted_data.get(), encrypted_data.get()+SIZE, [](unsigned char c) {
         return c != 0;
     }));
 
-    auto decrypted_data = (char*)malloc(SIZE);
+    auto decrypted_data = std::make_unique<unsigned char[]>(SIZE);
 
-    aes_decrypt((unsigned char*)decrypted_data, (unsigned char*)encrypted_data, result);
+    aes_decrypt(decrypted_data.get(), encrypted_data.get(), (size_t)result, key, iv);
 
-    ASSERT_EQ(0, memcmp(data, decrypted_data, SIZE));
-
-    free(decrypted_data);
-    free(encrypted_data);
+    ASSERT_EQ(0, memcmp(data, decrypted_data.get(), SIZE));
 }
 
 TEST(Seed, CalcSHA)
@@ -39,7 +43,7 @@ TEST(Seed, CalcSHA)
     const char *salt = "3asd23dad2";
     size_t SALT_SIZE = strlen(salt);
 
-    std::unique_ptr<unsigned char[]> out_sha = std::make_unique<unsigned char[]>(32);
+    auto out_sha = std::make_unique<unsigned char[]>(32);
 
     for (size_t i = 0; i <32; ++i)
         out_sha[i] = 0;

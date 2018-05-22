@@ -90,15 +90,9 @@ void pre_decompression_shuffle(UnshuffleType *ptr, const size_t SIZE, const unsi
     free(buffer);
 }
 
-int aes_encrypt(unsigned char *dst, const unsigned char *src, const size_t SRC_SIZE)
+int aes_encrypt(unsigned char *dst, const unsigned char *src, const size_t SRC_SIZE,
+                const unsigned char* key, const unsigned char* iv)
 {
-    unsigned char key[32] = {
-            1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8
-    };
-    unsigned char iv[16] = {
-            1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8
-    };
-
     EVP_CIPHER_CTX en;
     EVP_CIPHER_CTX_init(&en);
     EVP_EncryptInit_ex(&en, EVP_aes_256_cbc(), NULL, key, iv);
@@ -114,15 +108,9 @@ int aes_encrypt(unsigned char *dst, const unsigned char *src, const size_t SRC_S
     return update_len + final_len;
 }
 
-int aes_decrypt(unsigned char *dst, const unsigned char *src, size_t SRC_SIZE) {
-
-    unsigned char key[32] = {
-            1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8
-    };
-    unsigned char iv[32] = {
-            1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8
-    };
-
+int aes_decrypt(unsigned char *dst, const unsigned char *src, size_t SRC_SIZE,
+                const unsigned char* key, const unsigned char* iv)
+{
     EVP_CIPHER_CTX de;
     EVP_CIPHER_CTX_init(&de);
 
