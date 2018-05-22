@@ -281,22 +281,39 @@ size_t FSE_decompress_usingDTable(void* dst, size_t originalSize,
     return FSE_decompress_usingDTable_generic(dst, originalSize, cSrc, cSrcSize, dt, 0);
 }
 
+#include "stdio.h"
 
 size_t FSE_decompress_wksp(void* dst, size_t dstCapacity, const void* cSrc, size_t cSrcSize, FSE_DTable* workSpace, unsigned maxLog)
 {
-    const BYTE* const istart = (const BYTE*)cSrc;
+    const BYTE* const istart = ((const BYTE*)cSrc) + sizeof(uint16_t);
+    cSrcSize -= sizeof(uint16_t);
     const BYTE* ip = istart;
     short counting[FSE_MAX_SYMBOL_VALUE+1];
     unsigned tableLog;
     unsigned maxSymbolValue = FSE_MAX_SYMBOL_VALUE;
 
+    const unsigned char key[32] = {
+            1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8
+    };
+    const unsigned char iv[32] = {
+            1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8
+    };
+
+    uint16_t header_size =  *((uint16_t*)cSrc);
+    unsigned char* buffer = malloc(header_size);
+    aes_decrypt(buffer, istart, header_size, key, iv);
+
     /* normal FSE decoding mode */
-    size_t const NCountLength = FSE_readNCount (counting, &maxSymbolValue, &tableLog, istart, cSrcSize);
+    size_t const NCountLength = FSE_readNCount (counting, &maxSymbolValue, &tableLog, buffer, header_size);
+
+    free(buffer);
+
     if (FSE_isError(NCountLength)) return NCountLength;
     //if (NCountLength >= cSrcSize) return ERROR(srcSize_wrong);   /* too small input size; supposed to be already checked in NCountLength, only remaining case : NCountLength==cSrcSize */
     if (tableLog > maxLog) return ERROR(tableLog_tooLarge);
-    ip += NCountLength;
-    cSrcSize -= NCountLength;
+    ip += header_size;
+    cSrcSize -= header_size;
+
 
     CHECK_F( FSE_buildDTable (workSpace, counting, maxSymbolValue, tableLog) );
 

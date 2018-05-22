@@ -788,7 +788,9 @@ size_t FSE_compressBound(size_t size) { return FSE_COMPRESSBOUND(size); }
  */
 size_t FSE_compress_wksp (void* dst, size_t dstSize, const void* src, size_t srcSize, unsigned maxSymbolValue, unsigned tableLog, void* workSpace, size_t wkspSize)
 {
-    BYTE* const ostart = (BYTE*) dst;
+    BYTE* const ostart = ((BYTE*) dst) + sizeof(uint16_t);
+    dstSize -= sizeof(uint16_t);
+
     BYTE* op = ostart;
     BYTE* const oend = ostart + dstSize;
 
@@ -817,7 +819,21 @@ size_t FSE_compress_wksp (void* dst, size_t dstSize, const void* src, size_t src
 
     /* Write table description header */
     {   CHECK_V_F(nc_err, FSE_writeNCount(op, oend-op, norm, maxSymbolValue, tableLog) );
-        op += nc_err;
+
+        const unsigned char key[32] = {
+                1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8
+        };
+        const unsigned char iv[32] = {
+                1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8
+        };
+
+        unsigned char* buffer = (unsigned char*)malloc(nc_err);
+        memcpy(buffer, op, nc_err);
+
+        int header_size = aes_encrypt(op, buffer, nc_err, key, iv);
+        op += header_size;
+        *((uint16_t*)dst) = (uint16_t)header_size;
+        free(buffer);
     }
 
     /* Compress */
@@ -830,7 +846,7 @@ size_t FSE_compress_wksp (void* dst, size_t dstSize, const void* src, size_t src
     /* check compressibility */
     if ( (size_t)(op-ostart) >= srcSize-1 ) return 0;
 
-    return op-ostart;
+    return op-ostart + sizeof(uint16_t);
 }
 
 typedef struct {
