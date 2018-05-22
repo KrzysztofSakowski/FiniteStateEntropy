@@ -21,6 +21,7 @@ add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR} EXCLUDE_FROM_
 
 set(test_SRCS
         encryption_test.cpp
+        aes_test.cpp
         )
 
 add_executable(runUnitTests gtest.cpp ${test_SRCS})

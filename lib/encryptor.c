@@ -2,6 +2,8 @@
 
 #include <openssl/evp.h>
 #include <openssl/rand.h>
+#include <openssl/aes.h>
+#include <openssl/sha.h>
 
 #include <sodium.h>
 
@@ -89,4 +91,75 @@ void pre_decompression_shuffle(UnshuffleType *ptr, const size_t SIZE)
     rotate2(ptr, ptr+shuffle, ptr+SIZE);
 
     free(buffer);
+}
+
+int aes_encrypt(unsigned char *dst, const unsigned char *src, const size_t SRC_SIZE)
+{
+    unsigned char key[32] = {
+            1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8
+    };
+    unsigned char iv[16] = {
+            1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8
+    };
+
+    EVP_CIPHER_CTX en;
+    EVP_CIPHER_CTX_init(&en);
+    EVP_EncryptInit_ex(&en, EVP_aes_256_cbc(), NULL, key, iv);
+
+    int update_len, final_len;
+
+    EVP_EncryptUpdate(&en, dst, &update_len, src, (int)SRC_SIZE);
+
+    EVP_EncryptFinal_ex(&en, dst + update_len, &final_len);
+
+    EVP_CIPHER_CTX_cleanup(&en);
+
+    return update_len + final_len;
+}
+
+int aes_decrypt(unsigned char *dst, const unsigned char *src, size_t SRC_SIZE) {
+
+    unsigned char key[32] = {
+            1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8
+    };
+    unsigned char iv[32] = {
+            1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8
+    };
+
+    EVP_CIPHER_CTX de;
+    EVP_CIPHER_CTX_init(&de);
+
+    EVP_DecryptInit_ex(&de, EVP_aes_256_cbc(), NULL, key, iv);
+
+    int update_len, final_len;
+
+    EVP_DecryptUpdate(&de, dst, &update_len, src, (int)SRC_SIZE);
+    EVP_DecryptFinal_ex(&de, dst + update_len, &final_len);
+
+    EVP_CIPHER_CTX_cleanup(&de);
+
+    return update_len + final_len;
+}
+
+int calc_seed(const unsigned char *key_data, const size_t KEY_SIZE,
+              const unsigned char* salt, const size_t SALT_SIZE, const uint32_t BLOCK_ID, unsigned char* out_sha)
+{
+    SHA256_CTX context;
+
+    if(!SHA256_Init(&context))
+        return 0;
+
+    if(!SHA256_Update(&context, key_data, KEY_SIZE))
+        return 0;
+
+    if(!SHA256_Update(&context, salt, SALT_SIZE))
+        return 0;
+
+    if(!SHA256_Update(&context, &BLOCK_ID, sizeof(uint32_t)))
+        return 0;
+
+    if(!SHA256_Final(out_sha, &context))
+        return 0;
+
+    return 1;
 }

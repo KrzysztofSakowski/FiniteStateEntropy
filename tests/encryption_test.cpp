@@ -112,3 +112,4 @@ TEST(Integration, IO)
     free(compressed_buffer);
     free(buffer);
 }
+
