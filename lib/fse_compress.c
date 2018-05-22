@@ -132,7 +132,10 @@ size_t FSE_buildCTable_wksp(FSE_CTable* ct, const short* normalizedCounter, unsi
         if (position!=0) return ERROR(GENERIC);   /* Must have gone through all positions */
     }
 
-    pre_compression_shuffle(tableSymbol, tableSize);
+    const unsigned char SEED[32] = {
+            1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8
+    };
+    pre_compression_shuffle(tableSymbol, tableSize, SEED);
 
     /* Build table */
     {   U32 u; for (u=0; u<tableSize; u++) {

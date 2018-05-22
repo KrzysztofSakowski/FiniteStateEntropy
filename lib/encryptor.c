@@ -11,9 +11,6 @@
 
 
 static const size_t SHUFFLE_BLOCK_SIZE = 8;
-unsigned char SEED[randombytes_SEEDBYTES] = {
-    1, 2, 3, 4, 5, 6, 7, 8
-};
 
 void swap(ShuffleType* a, ShuffleType* b)
 {
@@ -51,7 +48,7 @@ void rotate2(UnshuffleType* first, UnshuffleType* middle, UnshuffleType* last)
     }
 }
 
-void pre_compression_shuffle(ShuffleType* ptr, const size_t SIZE)
+void pre_compression_shuffle(ShuffleType* ptr, const size_t SIZE, const unsigned char* SEED)
 {
     const size_t BUFFER_SIZE = SIZE / SHUFFLE_BLOCK_SIZE + sizeof(size_t);
     unsigned char* buffer = (unsigned char*) malloc(BUFFER_SIZE);
@@ -72,7 +69,7 @@ void pre_compression_shuffle(ShuffleType* ptr, const size_t SIZE)
     free(buffer);
 }
 
-void pre_decompression_shuffle(UnshuffleType *ptr, const size_t SIZE)
+void pre_decompression_shuffle(UnshuffleType *ptr, const size_t SIZE, const unsigned char* SEED)
 {
     const size_t BUFFER_SIZE = SIZE / SHUFFLE_BLOCK_SIZE + sizeof(size_t);
     unsigned char* buffer = (unsigned char*) malloc(BUFFER_SIZE);

@@ -136,7 +136,11 @@ size_t FSE_buildDTable(FSE_DTable* dt, const short* normalizedCounter, unsigned 
         if (position!=0) return ERROR(GENERIC);   /* position must reach all cells once, otherwise normalizedCounter is incorrect */
     }
 
-    pre_decompression_shuffle(tableDecode, tableSize);
+
+    const unsigned char SEED[32] = {
+            1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8
+    };
+    pre_decompression_shuffle(tableDecode, tableSize, SEED);
 
     /* Build Decoding table */
     {   U32 u;

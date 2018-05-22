@@ -10,6 +10,18 @@
 class EncryptorTest : public testing::Test {
 protected:
     const static int SHUFFLE_STEP = 7;
+
+    void SetUp() override
+    {
+        const char *key_data = "abcd";
+        const char *salt = "abcdefghabcdefgh";
+
+        int result = calc_seed((const unsigned char*)key_data, strlen(key_data), (const unsigned char*)salt, strlen(salt), 0, seed);
+
+        ASSERT_EQ(1, result);
+    }
+
+    unsigned char seed[32];
 };
 
 TEST_F(EncryptorTest, Shuffle)
@@ -29,7 +41,7 @@ TEST_F(EncryptorTest, Shuffle)
 
 TEST_F(EncryptorTest, Unshuffle)
 {
-    std::vector<FSE_DECODE_TYPE> data = {
+    std::vector<UnshuffleType> data = {
             {0, 0, 0}, {1, 1, 1}, {2, 2, 2}, {3, 3, 3}, {4, 4, 4}, {5, 5, 5}, {6, 6, 6}, {7, 7, 7}
     };
 

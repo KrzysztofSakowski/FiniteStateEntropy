@@ -11,9 +11,9 @@ extern "C"{
 typedef FSE_FUNCTION_TYPE ShuffleType;
 typedef FSE_DECODE_TYPE UnshuffleType;
 
-void pre_compression_shuffle(ShuffleType* ptr, size_t SIZE);
+void pre_compression_shuffle(ShuffleType* ptr, size_t SIZE, const unsigned char* SEED);
 
-void pre_decompression_shuffle(UnshuffleType* ptr, size_t SIZE);
+void pre_decompression_shuffle(UnshuffleType* ptr, size_t SIZE, const unsigned char* SEED);
 
 void rotate(ShuffleType* first, ShuffleType* middle, ShuffleType* last);
 
