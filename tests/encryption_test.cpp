@@ -1,10 +1,11 @@
 #include "gtest/gtest.h"
 
-#include <fse.h>
-#include <encryptor.h>
-
 #include <vector>
 #include <algorithm>
+
+#include <fse.h>
+#include <encryptor.h>
+#include <encryptor_ctx.h>
 
 
 class EncryptorTest : public testing::Test {
@@ -20,6 +21,16 @@ protected:
 
         ASSERT_EQ(1, result);
     }
+
+    const unsigned char KEY[32] = {
+            1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8
+    };
+    const unsigned char IV[32] = {
+            1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8
+    };
+    const unsigned char SEED[32] = {
+            1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8
+    };
 
     unsigned char seed[32];
 };
@@ -78,7 +89,7 @@ size_t read_file(BYTE* buffer, size_t BUFFER_SIZE)
     return read_bytes;
 }
 
-TEST(Integration, IO)
+TEST_F(EncryptorTest, Integration)
 {
     // read sample data
     const size_t BUFFER_SIZE = 100000;
@@ -88,9 +99,14 @@ TEST(Integration, IO)
 
     printf("Read %zu\n", read_bytes);
 
+    EncryptionCtx ctx;
+    ctx.key = KEY;
+    ctx.iv = IV;
+    ctx.seed = SEED;
+
     // compress
     BYTE* compressed_buffer = (BYTE*) malloc(BUFFER_SIZE);
-    size_t compression_result = FSE_compress(compressed_buffer, BUFFER_SIZE, buffer, read_bytes);
+    size_t compression_result = FSE_compress(compressed_buffer, BUFFER_SIZE, buffer, read_bytes, &ctx);
 
     if (compression_result == 0 || compression_result == 1 || FSE_isError(compression_result))
         printf("Compression error: %zu\n", compression_result);
@@ -124,4 +140,3 @@ TEST(Integration, IO)
     free(compressed_buffer);
     free(buffer);
 }
-

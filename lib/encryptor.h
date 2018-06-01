@@ -3,6 +3,7 @@
 
 #define FSE_STATIC_LINKING_ONLY
 #include "fse.h"
+#include "encryptor_ctx.h"
 
 #ifdef __cplusplus
 extern "C"{

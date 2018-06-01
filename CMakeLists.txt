@@ -27,6 +27,7 @@ set(LIB_SRC
         lib/error_public.h
         lib/encryptor.h
         lib/encryptor.c
+        lib/encryptor_ctx.h
         )
 
 set(PROGRAM_SRC
