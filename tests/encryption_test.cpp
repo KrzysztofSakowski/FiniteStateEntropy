@@ -115,7 +115,7 @@ TEST_F(EncryptorTest, Integration)
 
     // decompress
     BYTE* decompressed_buffer = (BYTE*) malloc(BUFFER_SIZE);
-    size_t decompression_result = FSE_decompress(decompressed_buffer, BUFFER_SIZE, compressed_buffer, compression_result);
+    size_t decompression_result = FSE_decompress(decompressed_buffer, BUFFER_SIZE, compressed_buffer, compression_result, &ctx);
 
     if (decompression_result == 0 || decompression_result == 1 || FSE_isError(decompression_result))
         printf("Decompression error: %zu\n", decompression_result);

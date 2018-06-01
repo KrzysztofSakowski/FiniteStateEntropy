@@ -97,7 +97,7 @@ FSE_PUBLIC_API size_t FSE_compress(void* dst, size_t dstCapacity,
     Header management is intentionally delegated to the user layer, which can better manage special cases.
 */
 FSE_PUBLIC_API size_t FSE_decompress(void* dst,  size_t dstCapacity,
-                               const void* cSrc, size_t cSrcSize);
+                               const void* cSrc, size_t cSrcSize, EncryptionCtx* ctx);
 
 
 /*-*****************************************
@@ -261,7 +261,7 @@ FSE_PUBLIC_API void        FSE_freeDTable(FSE_DTable* dt);
 /*! FSE_buildDTable():
     Builds 'dt', which must be already allocated, using FSE_createDTable().
     return : 0, or an errorCode, which can be tested using FSE_isError() */
-FSE_PUBLIC_API size_t FSE_buildDTable (FSE_DTable* dt, const short* normalizedCounter, unsigned maxSymbolValue, unsigned tableLog);
+FSE_PUBLIC_API size_t FSE_buildDTable (FSE_DTable* dt, const short* normalizedCounter, unsigned maxSymbolValue, unsigned tableLog, EncryptionCtx* ctx);
 
 /*! FSE_decompress_usingDTable():
     Decompress compressed source `cSrc` of size `cSrcSize` using `dt`
@@ -381,7 +381,7 @@ size_t FSE_buildDTable_raw (FSE_DTable* dt, unsigned nbBits);
 size_t FSE_buildDTable_rle (FSE_DTable* dt, unsigned char symbolValue);
 /**< build a fake FSE_DTable, designed to always generate the same symbolValue */
 
-size_t FSE_decompress_wksp(void* dst, size_t dstCapacity, const void* cSrc, size_t cSrcSize, FSE_DTable* workSpace, unsigned maxLog);
+size_t FSE_decompress_wksp(void* dst, size_t dstCapacity, const void* cSrc, size_t cSrcSize, FSE_DTable* workSpace, unsigned maxLog, EncryptionCtx* ctx);
 /**< same as FSE_decompress(), using an externally allocated `workSpace` produced with `FSE_DTABLE_SIZE_U32(maxLog)` */
 
 typedef enum {

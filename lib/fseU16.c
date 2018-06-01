@@ -322,7 +322,7 @@ size_t FSE_decompressU16(U16* dst, size_t maxDstSize,
         ip += NSize;
         cSrcSize -= NSize;
     }
-    {   size_t const errorCode = FSE_buildDTableU16 (dt, NCount, maxSymbolValue, tableLog);
+    {   size_t const errorCode = FSE_buildDTableU16 (dt, NCount, maxSymbolValue, tableLog, NULL);
         if (FSE_isError(errorCode)) return errorCode;
     }
     return FSE_decompressU16_usingDTable (dst, maxDstSize, ip, cSrcSize, dt);

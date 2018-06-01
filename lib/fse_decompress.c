@@ -44,6 +44,7 @@
 #include "fse.h"
 #include "error_private.h"
 #include "encryptor.h"
+#include "encryptor_ctx.h"
 
 
 /* **************************************************************
@@ -91,7 +92,7 @@ void FSE_freeDTable (FSE_DTable* dt)
     free(dt);
 }
 
-size_t FSE_buildDTable(FSE_DTable* dt, const short* normalizedCounter, unsigned maxSymbolValue, unsigned tableLog)
+size_t FSE_buildDTable(FSE_DTable* dt, const short* normalizedCounter, unsigned maxSymbolValue, unsigned tableLog, EncryptionCtx* ctx)
 {
     void* const tdPtr = dt+1;   /* because *dt is unsigned, 32-bits aligned on 32-bits */
     FSE_DECODE_TYPE* const tableDecode = (FSE_DECODE_TYPE*) (tdPtr);
@@ -136,11 +137,8 @@ size_t FSE_buildDTable(FSE_DTable* dt, const short* normalizedCounter, unsigned 
         if (position!=0) return ERROR(GENERIC);   /* position must reach all cells once, otherwise normalizedCounter is incorrect */
     }
 
-
-    const unsigned char SEED[32] = {
-            1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8
-    };
-    pre_decompression_shuffle(tableDecode, tableSize, SEED);
+    if (ctx)
+        pre_decompression_shuffle(tableDecode, tableSize, ctx->seed);
 
     /* Build Decoding table */
     {   U32 u;
@@ -281,41 +279,49 @@ size_t FSE_decompress_usingDTable(void* dst, size_t originalSize,
     return FSE_decompress_usingDTable_generic(dst, originalSize, cSrc, cSrcSize, dt, 0);
 }
 
-#include "stdio.h"
-
-size_t FSE_decompress_wksp(void* dst, size_t dstCapacity, const void* cSrc, size_t cSrcSize, FSE_DTable* workSpace, unsigned maxLog)
+size_t FSE_decompress_wksp(void* dst, size_t dstCapacity, const void* cSrc, size_t cSrcSize, FSE_DTable* workSpace, unsigned maxLog, EncryptionCtx* ctx)
 {
-    const BYTE* const istart = ((const BYTE*)cSrc) + sizeof(uint16_t);
-    cSrcSize -= sizeof(uint16_t);
+    const BYTE *istart = (const BYTE *) cSrc;
+
+    if (ctx) {
+        istart += sizeof(uint16_t);
+        cSrcSize -= sizeof(uint16_t);
+    }
+
     const BYTE* ip = istart;
     short counting[FSE_MAX_SYMBOL_VALUE+1];
     unsigned tableLog;
     unsigned maxSymbolValue = FSE_MAX_SYMBOL_VALUE;
 
-    const unsigned char key[32] = {
-            1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8
-    };
-    const unsigned char iv[32] = {
-            1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8
-    };
+    size_t NCountLength;
+    uint16_t header_size;
 
-    uint16_t header_size =  *((uint16_t*)cSrc);
-    unsigned char* buffer = malloc(header_size);
-    aes_decrypt(buffer, istart, header_size, key, iv);
+    if  (ctx)
+    {
+        header_size =  *((uint16_t*)cSrc);
+        unsigned char* buffer = malloc(header_size);
+        aes_decrypt(buffer, istart, header_size, ctx->key, ctx->iv);
 
-    /* normal FSE decoding mode */
-    size_t const NCountLength = FSE_readNCount (counting, &maxSymbolValue, &tableLog, buffer, header_size);
+        NCountLength = FSE_readNCount (counting, &maxSymbolValue, &tableLog, buffer, header_size);
 
-    free(buffer);
+        free(buffer);
+    }
+    else
+        /* normal FSE decoding mode */
+        NCountLength = FSE_readNCount (counting, &maxSymbolValue, &tableLog, istart, cSrcSize);
+
 
     if (FSE_isError(NCountLength)) return NCountLength;
     //if (NCountLength >= cSrcSize) return ERROR(srcSize_wrong);   /* too small input size; supposed to be already checked in NCountLength, only remaining case : NCountLength==cSrcSize */
     if (tableLog > maxLog) return ERROR(tableLog_tooLarge);
-    ip += header_size;
-    cSrcSize -= header_size;
 
+    if (ctx)
+    {
+        ip += header_size;
+        cSrcSize -= header_size;
+    }
 
-    CHECK_F( FSE_buildDTable (workSpace, counting, maxSymbolValue, tableLog) );
+    CHECK_F( FSE_buildDTable (workSpace, counting, maxSymbolValue, tableLog, ctx) );
 
     return FSE_decompress_usingDTable (dst, dstCapacity, ip, cSrcSize, workSpace);   /* always return, even if it is an error code */
 }
@@ -323,10 +329,10 @@ size_t FSE_decompress_wksp(void* dst, size_t dstCapacity, const void* cSrc, size
 
 typedef FSE_DTable DTable_max_t[FSE_DTABLE_SIZE_U32(FSE_MAX_TABLELOG)];
 
-size_t FSE_decompress(void* dst, size_t dstCapacity, const void* cSrc, size_t cSrcSize)
+size_t FSE_decompress(void* dst, size_t dstCapacity, const void* cSrc, size_t cSrcSize, EncryptionCtx* ctx)
 {
     DTable_max_t dt;   /* Static analyzer seems unable to understand this table will be properly initialized later */
-    return FSE_decompress_wksp(dst, dstCapacity, cSrc, cSrcSize, dt, FSE_MAX_TABLELOG);
+    return FSE_decompress_wksp(dst, dstCapacity, cSrc, cSrcSize, dt, FSE_MAX_TABLELOG, ctx);
 }
 
 
