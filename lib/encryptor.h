@@ -12,6 +12,11 @@ extern "C"{
 typedef FSE_FUNCTION_TYPE ShuffleType;
 typedef FSE_DECODE_TYPE UnshuffleType;
 
+void init_ctx(EncryptionCtx *ctx, uint32_t block_id, const unsigned char *key_data, size_t KEY_SIZE,
+              const unsigned char* salt, size_t SALT_SIZE);
+
+void deinit_ctx(EncryptionCtx *ctx);
+
 void pre_compression_shuffle(ShuffleType* ptr, size_t SIZE, const unsigned char* SEED);
 
 void pre_decompression_shuffle(UnshuffleType* ptr, size_t SIZE, const unsigned char* SEED);

@@ -134,7 +134,7 @@ size_t FSE_buildCTable_wksp(FSE_CTable* ct, const short* normalizedCounter, unsi
     }
 
     if (ctx)
-        pre_compression_shuffle(tableSymbol, tableSize, ctx->seed);
+        pre_compression_shuffle(tableSymbol, tableSize, ctx->shuffle_seed);
 
     /* Build table */
     {   U32 u; for (u=0; u<tableSize; u++) {

@@ -4,11 +4,12 @@
 #include <stdint.h>
 
 typedef struct {
-    uint32_t BLOCK_ID;
-    unsigned char salt[16];
-    const unsigned char* key; // TODO: size 32?
-    const unsigned char* iv; // TODO: size 32?
-    const unsigned char* seed; // TODO: size 32?
+    // for AES-256 CBC it is 32 bytes
+    unsigned char* key;
+    // for AES-256 CBC it is 16 bytes
+    unsigned char* iv;
+    // 32 bytes, required by sodium library
+    unsigned char* shuffle_seed;
 } EncryptionCtx;
 
 #endif //FSE_ENCRYPTOR_CTX_H

@@ -4,8 +4,6 @@ set(REPO ${CMAKE_SOURCE_DIR})
 
 project(Test)
 
-include_directories(${CMAKE_SOURCE_DIR}/src)
-
 include(CTest)
 enable_testing()
 

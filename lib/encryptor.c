@@ -8,7 +8,7 @@
 #include <sodium.h>
 
 #include <stdlib.h>
-
+#include <assert.h>
 
 static const size_t SHUFFLE_BLOCK_SIZE = 8;
 
@@ -147,4 +147,31 @@ int calc_seed(const unsigned char *key_data, const size_t KEY_SIZE,
         return 0;
 
     return 1;
+}
+
+void init_ctx(EncryptionCtx *ctx, uint32_t block_id, const unsigned char *key_data, const size_t KEY_SIZE,
+              const unsigned char* salt, const size_t SALT_SIZE)
+{
+    assert(SALT_SIZE == 16);
+
+    ctx->iv = malloc(SALT_SIZE);
+    memcpy(ctx->iv, salt, SALT_SIZE);
+
+    ctx->key = malloc(32);
+    ctx->shuffle_seed = malloc(32);
+
+    int result;
+
+    result = calc_seed(key_data, KEY_SIZE, salt, SALT_SIZE, block_id, ctx->key);
+    assert(result == 1);
+    result = calc_seed(key_data, KEY_SIZE, salt, SALT_SIZE, block_id, ctx->shuffle_seed);
+    assert(result == 1);
+}
+
+void deinit_ctx(EncryptionCtx *ctx)
+{
+    // TODO: memset 0?
+    free(ctx->iv);
+    free(ctx->key);
+    free(ctx->shuffle_seed);
 }

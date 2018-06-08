@@ -138,7 +138,7 @@ size_t FSE_buildDTable(FSE_DTable* dt, const short* normalizedCounter, unsigned 
     }
 
     if (ctx)
-        pre_decompression_shuffle(tableDecode, tableSize, ctx->seed);
+        pre_decompression_shuffle(tableDecode, tableSize, ctx->shuffle_seed);
 
     /* Build Decoding table */
     {   U32 u;

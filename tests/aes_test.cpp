@@ -12,7 +12,7 @@ TEST(AESTest, Encrypt)
     const unsigned char key[32] = {
             1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8
     };
-    const unsigned char iv[32] = {
+    const unsigned char iv[16] = {
             1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8
     };
     const char *data = "3fasf34sv4afg4g3bhmjymd5vhtst";

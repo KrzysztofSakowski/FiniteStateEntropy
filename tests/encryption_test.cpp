@@ -25,11 +25,9 @@ protected:
     const unsigned char KEY[32] = {
             1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8
     };
-    const unsigned char IV[32] = {
-            1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8
-    };
-    const unsigned char SEED[32] = {
-            1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8
+
+    const unsigned char IV[16] = {
+            1, 6, 3, 4, 7, 6, 7, 8, 1, 3, 5, 4, 5, 6, 7, 8
     };
 
     unsigned char seed[32];
@@ -100,9 +98,8 @@ TEST_F(EncryptorTest, Integration)
     printf("Read %zu\n", read_bytes);
 
     EncryptionCtx ctx;
-    ctx.key = KEY;
-    ctx.iv = IV;
-    ctx.seed = SEED;
+
+    init_ctx(&ctx, 0, KEY, 32, IV, 16);
 
     // compress
     BYTE* compressed_buffer = (BYTE*) malloc(BUFFER_SIZE);
@@ -135,6 +132,8 @@ TEST_F(EncryptorTest, Integration)
         is_ok = 0;
 
     ASSERT_TRUE(is_ok);
+
+    deinit_ctx(&ctx);
 
     free(decompressed_buffer);
     free(compressed_buffer);
