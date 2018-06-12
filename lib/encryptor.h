@@ -34,6 +34,11 @@ int aes_decrypt(unsigned char* dst, const unsigned char* src, size_t SRC_SIZE,
 int calc_seed(const unsigned char *key_data, size_t KEY_SIZE,
               const unsigned char* salt, size_t SALT_SIZE, uint32_t BLOCK_ID, unsigned char* out_sha);
 
+int is_operation_successful(size_t result);
+
+size_t compress_with_blocks(void *dst, size_t dstCapacity, const void *src, size_t srcSize, const unsigned char *KEY,
+                            const unsigned char *SALT);
+
 #ifdef __cplusplus
 }
 #endif

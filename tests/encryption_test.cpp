@@ -32,21 +32,6 @@ protected:
 
     unsigned char seed[32];
 
-    size_t compression_helper(void* dst, size_t dstCapacity, const void* src, size_t srcSize, uint32_t block_id)
-    {
-        EncryptionCtx ctx;
-
-        init_ctx(&ctx, block_id, KEY, 32, IV, 16);
-
-        size_t compression_result = FSE_compress(dst, dstCapacity, src, srcSize, &ctx);
-
-        bool compressionFailed = compression_result == 0 || compression_result == 1 || FSE_isError(compression_result);
-
-        deinit_ctx(&ctx);
-
-        return compression_result;
-    }
-
     size_t decompression_helper(void* dst, size_t dstCapacity, const void* src, size_t srcSize, uint32_t block_id)
     {
         EncryptionCtx ctx;
@@ -117,7 +102,7 @@ size_t read_file(BYTE* buffer, size_t BUFFER_SIZE)
     return read_bytes;
 }
 
-TEST_F(EncryptorTest, Integration)
+TEST_F(EncryptorTest, EncryptSingleBlock)
 {
     // read sample data
     const size_t BUFFER_SIZE = 100000;
@@ -133,17 +118,13 @@ TEST_F(EncryptorTest, Integration)
     BYTE* compressed_buffer = (BYTE*) malloc(BUFFER_SIZE);
     size_t compression_result = FSE_compress(compressed_buffer, BUFFER_SIZE, buffer, read_bytes, &ctx);
 
-    bool compressionFailed = compression_result == 0 || compression_result == 1 || FSE_isError(compression_result);
-
-    ASSERT_FALSE(compressionFailed);
+    ASSERT_TRUE(is_operation_successful(compression_result));
 
     // decompress
     BYTE* decompressed_buffer = (BYTE*) malloc(BUFFER_SIZE);
     size_t decompression_result = FSE_decompress(decompressed_buffer, BUFFER_SIZE, compressed_buffer, compression_result, &ctx);
 
-    bool decompressionFailed = decompression_result == 0 || decompression_result == 1 || FSE_isError(decompression_result);
-
-    ASSERT_FALSE(decompressionFailed);
+    ASSERT_TRUE(is_operation_successful(decompression_result));
 
     // compare
     {
@@ -166,9 +147,9 @@ TEST_F(EncryptorTest, Integration)
     free(compressed_buffer);
     free(buffer);
 }
-TEST_F(EncryptorTest, IntegrationWithBlocks)
+
+TEST_F(EncryptorTest, EncryptManyBlocks)
 {
-    const uint16_t BLOCK_SIZE = 30000;
     const size_t BUFFER_SIZE = 100000;
 
     // get data
@@ -176,32 +157,11 @@ TEST_F(EncryptorTest, IntegrationWithBlocks)
 
     size_t read_bytes = read_file(buffer, BUFFER_SIZE);
 
-    // calc block count
-    auto block_count = static_cast<uint32_t>(read_bytes / BLOCK_SIZE);
-
     // compress
-    size_t already_compressed = 0;
-    size_t compressed_size = sizeof(uint32_t) + (block_count-1) * sizeof(uint16_t);
     BYTE* compressed_buffer = (BYTE*) malloc(BUFFER_SIZE);
-    ((uint32_t*)compressed_buffer)[0] = block_count;
+    size_t compression_result = compress_with_blocks(compressed_buffer, BUFFER_SIZE, buffer, BUFFER_SIZE, KEY, IV);
 
-    for (uint32_t block_id = 0; block_id+1 < block_count; ++block_id)
-    {
-        size_t compression_result = compression_helper(compressed_buffer+compressed_size, BUFFER_SIZE - compressed_size,
-                buffer + already_compressed, BLOCK_SIZE, block_id);
-
-        ((uint16_t*)compressed_buffer)[block_id+2] = static_cast<uint16_t>(compression_result);
-
-        compressed_size += compression_result;
-        already_compressed += BLOCK_SIZE;
-    }
-
-    {
-        size_t compression_result = compression_helper(compressed_buffer+compressed_size, BUFFER_SIZE - compressed_size,
-                                                       buffer + already_compressed, BUFFER_SIZE-already_compressed, block_count - 1);
-
-        compressed_size += compression_result;
-    }
+    ASSERT_TRUE(is_operation_successful(compression_result));
 
     // decompress
     uint32_t compressed_block_count = ((uint32_t*)compressed_buffer)[0];
@@ -226,7 +186,7 @@ TEST_F(EncryptorTest, IntegrationWithBlocks)
         size_t decompression_result = decompression_helper(decompress_buffer + decompressed_offset,
                                                            BUFFER_SIZE - decompressed_offset,
                                                            compressed_buffer + compressed_offset,
-                                                           compressed_size - compressed_offset, // TODO hacked with: compressed_size
+                                                           compression_result - compressed_offset,
                                                            compressed_block_count - 1);
 
         decompressed_offset += decompression_result;

@@ -11,6 +11,7 @@
 #include <assert.h>
 
 static const size_t SHUFFLE_BLOCK_SIZE = 8;
+static const size_t BLOCK_SIZE = 30000;
 
 void swap(ShuffleType* a, ShuffleType* b)
 {
@@ -174,4 +175,62 @@ void deinit_ctx(EncryptionCtx *ctx)
     free(ctx->iv);
     free(ctx->key);
     free(ctx->shuffle_seed);
+}
+
+int is_operation_successful(size_t result)
+{
+    int operation_failed = result == 0 || result == 1 || FSE_isError(result);
+    return !operation_failed;
+}
+
+size_t compression_helper(void* dst, size_t dstCapacity, const void* src, size_t srcSize, const unsigned char *KEY,
+                          const unsigned char *SALT, uint32_t block_id)
+{
+    EncryptionCtx ctx;
+
+    init_ctx(&ctx, block_id, KEY, 32, SALT, 16);
+
+    size_t compression_result = FSE_compress(dst, dstCapacity, src, srcSize, &ctx);
+
+    deinit_ctx(&ctx);
+
+    return compression_result;
+}
+
+size_t compress_with_blocks(void *dst, size_t dstCapacity, const void *src, size_t srcSize, const unsigned char *KEY,
+                            const unsigned char *SALT)
+{
+    uint32_t block_count = (uint32_t)(srcSize / BLOCK_SIZE);
+
+    size_t src_offset = 0;
+    size_t dst_offset = sizeof(uint32_t) + (block_count-1) * sizeof(uint16_t);
+
+    ((uint32_t*)dst)[0] = block_count;
+    uint32_t block_id;
+
+    for (block_id = 0; block_id+1 < block_count; ++block_id)
+    {
+        size_t compression_result = compression_helper(dst + dst_offset, dstCapacity - dst_offset,
+                                                       src + src_offset, BLOCK_SIZE, KEY, SALT, block_id);
+
+        if (!is_operation_successful(compression_result))
+            return compression_result;
+
+        ((uint16_t*)dst)[block_id+2] = (uint16_t)compression_result;
+
+        src_offset += BLOCK_SIZE;
+        dst_offset += compression_result;
+    }
+
+    {
+        size_t compression_result = compression_helper(dst + dst_offset, dstCapacity - dst_offset,
+                                                       src + src_offset, srcSize - src_offset, KEY, SALT, block_count-1);
+
+        if (!is_operation_successful(compression_result))
+            return compression_result;
+
+        dst_offset += compression_result;
+    }
+
+    return dst_offset;
 }
