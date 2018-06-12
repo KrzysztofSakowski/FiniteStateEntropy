@@ -12,7 +12,7 @@ extern "C"{
 typedef FSE_FUNCTION_TYPE ShuffleType;
 typedef FSE_DECODE_TYPE UnshuffleType;
 
-void init_ctx(EncryptionCtx *ctx, uint32_t block_id, const unsigned char *key_data, size_t KEY_SIZE,
+void init_ctx(EncryptionCtx *ctx, uint32_t block_id, const unsigned char *key_data, size_t KEY_DATA_SIZE,
               const unsigned char* salt, size_t SALT_SIZE);
 
 void deinit_ctx(EncryptionCtx *ctx);
@@ -38,6 +38,9 @@ int is_operation_successful(size_t result);
 
 size_t compress_with_blocks(void *dst, size_t dstCapacity, const void *src, size_t srcSize, const unsigned char *KEY,
                             const unsigned char *SALT);
+
+size_t decompress_with_blocks(void *dst, size_t dstCapacity, const void *src, size_t srcSize, const unsigned char *KEY,
+                              const unsigned char *SALT);
 
 #ifdef __cplusplus
 }
