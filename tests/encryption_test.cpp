@@ -144,14 +144,61 @@ TEST_F(EncryptorTest, EncryptManyBlocks)
 
     // compress
     BYTE* compressed_buffer = (BYTE*) malloc(BUFFER_SIZE);
-    size_t compression_result = compress_with_blocks(compressed_buffer, BUFFER_SIZE, buffer, BUFFER_SIZE, KEY, IV);
+    size_t compression_result = compress_with_blocks(compressed_buffer, BUFFER_SIZE, buffer, BUFFER_SIZE, KEY, 32, IV);
 
     ASSERT_TRUE(is_operation_successful(compression_result));
 
     // decompress
     BYTE* decompress_buffer = (BYTE*) malloc(BUFFER_SIZE);
     size_t decompression_result = decompress_with_blocks(decompress_buffer, BUFFER_SIZE,
-                                                         compressed_buffer, compression_result, KEY, IV);
+                                                         compressed_buffer, compression_result, KEY, 32, IV);
+
+    ASSERT_TRUE(is_operation_successful(decompression_result));
+
+    // compare
+    {
+        int is_ok;
+
+        ASSERT_EQ(decompression_result, read_bytes);
+
+        if (decompression_result == read_bytes)
+        {
+            int cmp_result = memcmp(buffer, decompress_buffer, read_bytes);
+            is_ok = (cmp_result == 0);
+        }
+        else
+            is_ok = 0;
+
+        ASSERT_TRUE(is_ok);
+    }
+
+    // clean up
+    free(buffer);
+    free(compressed_buffer);
+    free(decompress_buffer);
+}
+
+
+TEST_F(EncryptorTest, CustomKey)
+{
+    const size_t BUFFER_SIZE = 100000;
+    const unsigned char CUSTOM_KEY[] = {43, 23, 123, 33, 40, 4};
+
+    // get data
+    BYTE* buffer = (BYTE*) malloc(BUFFER_SIZE);
+
+    size_t read_bytes = read_file(buffer, BUFFER_SIZE);
+
+    // compress
+    BYTE* compressed_buffer = (BYTE*) malloc(BUFFER_SIZE);
+    size_t compression_result = compress_with_blocks(compressed_buffer, BUFFER_SIZE, buffer, BUFFER_SIZE, CUSTOM_KEY, 6, IV);
+
+    ASSERT_TRUE(is_operation_successful(compression_result));
+
+    // decompress
+    BYTE* decompress_buffer = (BYTE*) malloc(BUFFER_SIZE);
+    size_t decompression_result = decompress_with_blocks(decompress_buffer, BUFFER_SIZE, compressed_buffer,
+                                                         compression_result, CUSTOM_KEY, 6, IV);
 
     ASSERT_TRUE(is_operation_successful(decompression_result));
 
