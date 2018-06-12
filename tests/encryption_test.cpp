@@ -12,16 +12,6 @@ class EncryptorTest : public testing::Test {
 protected:
     const static int SHUFFLE_STEP = 7;
 
-    void SetUp() override
-    {
-        const char *key_data = "abcd";
-        const char *salt = "abcdefghabcdefgh";
-
-        int result = calc_seed((const unsigned char*)key_data, strlen(key_data), (const unsigned char*)salt, strlen(salt), 0, seed);
-
-        ASSERT_EQ(1, result);
-    }
-
     const unsigned char KEY[32] = {
             1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8
     };
@@ -29,8 +19,6 @@ protected:
     const unsigned char IV[16] = {
             1, 6, 3, 4, 7, 6, 7, 8, 1, 3, 5, 4, 5, 6, 7, 8
     };
-
-    unsigned char seed[32];
 };
 
 TEST_F(EncryptorTest, Shuffle)
