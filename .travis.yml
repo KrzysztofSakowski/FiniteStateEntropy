@@ -3,12 +3,19 @@ sudo: true
 language:
   - cpp
 
+compiler:
+  - gcc
+
 addons:
   apt:
+    update: true
     sources:
       - ubuntu-toolchain-r-test
+    packages:
+      - g++-7
 
-install:
+before_install:
+  - sudo apt-get update -q
   - sudo apt-get install -y libsodium-dev
 
 script:
