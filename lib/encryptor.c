@@ -10,19 +10,29 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include <stdint.h>
+#if UINTPTR_MAX == 0xffffffff
+#define SHUFFLE_32
+#elif UINTPTR_MAX == 0xffffffffffffffff
+#define SHUFFLE_64
+#endif
+
 static const size_t SHUFFLE_BLOCK_SIZE = 8;
 static const size_t BLOCK_SIZE = 30000;
+
+// https://stackoverflow.com/questions/776508/best-practices-for-circular-shift-rotate-operations-in-c
+void bit_rotate_64(uint64_t *n, unsigned int c)
+{
+    c = (sizeof(uint64_t) - c) * CHAR_BIT; // changes rotate left to rotate right and bytes to bits
+    const unsigned int mask = (CHAR_BIT*sizeof(*n) - 1);  // assumes width is a power of 2.
+
+    c &= mask;
+    *n = (*n<<c) | (*n>>( (-c)&mask ));
+}
 
 void swap(ShuffleType* a, ShuffleType* b)
 {
     ShuffleType tmp = *a;
-    *a = *b;
-    *b = tmp;
-}
-
-void swap2(UnshuffleType* a, UnshuffleType* b)
-{
-    UnshuffleType tmp = *a;
     *a = *b;
     *b = tmp;
 }
@@ -36,6 +46,13 @@ void rotate(ShuffleType* first, ShuffleType* middle, ShuffleType* last)
         if (next==last) next=middle;
         else if (first==middle) middle=next;
     }
+}
+
+void swap2(UnshuffleType* a, UnshuffleType* b)
+{
+    UnshuffleType tmp = *a;
+    *a = *b;
+    *b = tmp;
 }
 
 void rotate2(UnshuffleType* first, UnshuffleType* middle, UnshuffleType* last)
@@ -60,7 +77,12 @@ void pre_compression_shuffle(ShuffleType* ptr, const size_t SIZE, const unsigned
     for (i = 0; i+SHUFFLE_BLOCK_SIZE <= SIZE; i += SHUFFLE_BLOCK_SIZE)
     {
         shuffle = buffer[i] % SHUFFLE_BLOCK_SIZE;
+
+#ifdef SHUFFLE_64
+        bit_rotate_64((uint64_t *)(ptr + i), (unsigned int) shuffle);
+#else
         rotate(ptr+i, ptr+i+shuffle, ptr+i+SHUFFLE_BLOCK_SIZE);
+#endif
     }
 
     shuffle = *((size_t*)(buffer + BUFFER_SIZE - sizeof(size_t))) % SIZE;

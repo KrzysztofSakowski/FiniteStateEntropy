@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <algorithm>
+#include <climits>
 
 #include <fse.h>
 #include <encryptor.h>
@@ -20,6 +21,21 @@ protected:
             1, 6, 3, 4, 7, 6, 7, 8, 1, 3, 5, 4, 5, 6, 7, 8
     };
 };
+
+TEST_F(EncryptorTest, BitRotate)
+{
+    std::vector<ShuffleType> data = {
+            0, 1, 2, 3, 4, 5, 6, 7
+    };
+
+    auto data2 = data;
+
+    bit_rotate_64(reinterpret_cast<uint64_t *>(data.data()), SHUFFLE_STEP);
+
+    std::rotate(data2.begin(), data2.begin()+SHUFFLE_STEP, data2.end());
+
+    ASSERT_EQ(data, data2);
+}
 
 TEST_F(EncryptorTest, Shuffle)
 {
@@ -165,7 +181,6 @@ TEST_F(EncryptorTest, EncryptManyBlocks)
     free(compressed_buffer);
     free(decompress_buffer);
 }
-
 
 TEST_F(EncryptorTest, CustomKey)
 {

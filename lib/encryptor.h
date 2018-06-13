@@ -21,6 +21,8 @@ void pre_compression_shuffle(ShuffleType* ptr, size_t SIZE, const unsigned char*
 
 void pre_decompression_shuffle(UnshuffleType* ptr, size_t SIZE, const unsigned char* SEED);
 
+void bit_rotate_64(uint64_t *n, unsigned int c);
+
 void rotate(ShuffleType* first, ShuffleType* middle, ShuffleType* last);
 
 void rotate2(UnshuffleType* first, UnshuffleType* middle, UnshuffleType* last);
