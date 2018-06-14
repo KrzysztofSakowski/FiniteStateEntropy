@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 3.7)
 project(fse)
 
-include_directories(lib/)
-
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+
+include_directories(lib/)
 
 find_package(OpenSSL REQUIRED)
 include_directories(${OpenSSL_INCLUDE_DIR})
