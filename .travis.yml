@@ -1,4 +1,4 @@
-sudo: true
+sudo: false
 
 language:
   - cpp
@@ -11,16 +11,13 @@ addons:
     sources:
       - ubuntu-toolchain-r-test
     packages:
+      - gcc-7
       - g++-7
-
-before_install:
-  - sudo add-apt-repository ppa:ondrej/php -y
-  - sudo apt-get update -q
-  - sudo apt-get install -q libsodium-dev
+      - libsodium-dev
 
 script:
-  - sudo ln -s /usr/bin/gcc-7 /usr/local/bin/gcc
-  - sudo ln -s /usr/bin/g++-7 /usr/local/bin/g++
+  - export CC=gcc-7
+  - export CXX=g++-7
   - mkdir build
   - cd build
   - cmake ../

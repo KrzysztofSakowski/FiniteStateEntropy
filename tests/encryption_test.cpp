@@ -84,7 +84,10 @@ size_t read_file(BYTE* buffer, size_t BUFFER_SIZE)
     if (f)
         read_bytes = fread(buffer, sizeof(BYTE), BUFFER_SIZE, f);
     else
+    {
         printf("Error when opening the file");
+        return 0;
+    }
 
     fclose(f);
 
@@ -98,6 +101,7 @@ TEST_F(EncryptorTest, EncryptSingleBlock)
     BYTE* buffer = (BYTE*) malloc(BUFFER_SIZE);
 
     size_t read_bytes = read_file(buffer, BUFFER_SIZE);
+    ASSERT_TRUE(read_bytes > 0);
 
     EncryptionCtx ctx;
 
@@ -145,6 +149,7 @@ TEST_F(EncryptorTest, EncryptManyBlocks)
     BYTE* buffer = (BYTE*) malloc(BUFFER_SIZE);
 
     size_t read_bytes = read_file(buffer, BUFFER_SIZE);
+    ASSERT_TRUE(read_bytes > 0);
 
     // compress
     BYTE* compressed_buffer = (BYTE*) malloc(BUFFER_SIZE);
@@ -191,6 +196,7 @@ TEST_F(EncryptorTest, CustomKey)
     BYTE* buffer = (BYTE*) malloc(BUFFER_SIZE);
 
     size_t read_bytes = read_file(buffer, BUFFER_SIZE);
+    ASSERT_TRUE(read_bytes > 0);
 
     // compress
     BYTE* compressed_buffer = (BYTE*) malloc(BUFFER_SIZE);

@@ -15,6 +15,8 @@ download_project(
         UPDATE_DISCONNECTED 1
 )
 
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/proba.bin ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+
 add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR} EXCLUDE_FROM_ALL)
 
 set(test_SRCS
