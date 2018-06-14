@@ -38,6 +38,7 @@
 ****************************************************************/
 #include <stdlib.h>     /* malloc, free, qsort */
 #include <string.h>     /* memcpy, memset */
+#include <stdio.h> // TODO: remove
 #include "bitstream.h"
 #include "compiler.h"
 #define FSE_STATIC_LINKING_ONLY
@@ -310,18 +311,23 @@ size_t FSE_decompress_wksp(void* dst, size_t dstCapacity, const void* cSrc, size
         /* normal FSE decoding mode */
         NCountLength = FSE_readNCount (counting, &maxSymbolValue, &tableLog, istart, cSrcSize);
 
+    printf("1\n");
 
     if (FSE_isError(NCountLength)) return NCountLength;
+    printf("2\n");
     //if (NCountLength >= cSrcSize) return ERROR(srcSize_wrong);   /* too small input size; supposed to be already checked in NCountLength, only remaining case : NCountLength==cSrcSize */
     if (tableLog > maxLog) return ERROR(tableLog_tooLarge);
-
+    printf("3\n");
     if (ctx)
     {
         ip += header_size;
         cSrcSize -= header_size;
     }
+    printf("4\n");
 
     CHECK_F( FSE_buildDTable (workSpace, counting, maxSymbolValue, tableLog, ctx) );
+
+    printf("5\n");
 
     return FSE_decompress_usingDTable (dst, dstCapacity, ip, cSrcSize, workSpace);   /* always return, even if it is an error code */
 }
