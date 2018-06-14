@@ -14,7 +14,7 @@ addons:
       - g++-7
 
 before_install:
-  - sudo add-apt-repository ppa:chris-lea/libsodium -y
+  - sudo add-apt-repository ppa:ondrej/php -y
   - sudo apt-get update -q
   - sudo apt-get install -q libsodium-dev
 
@@ -23,7 +23,7 @@ script:
   - cd build
   - cmake ../
   - make
-  - ctest
+  - ./tests/runUnitTests
 
 notifications:
-email: false
+  email: false

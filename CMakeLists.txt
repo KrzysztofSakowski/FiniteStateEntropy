@@ -45,7 +45,7 @@ add_library(fse ${LIB_SRC})
 
 add_executable(commandline    ${PROGRAM_SRC} programs/commandline.c)
 add_executable(fullbench      ${PROGRAM_SRC} programs/fullbench.c)
-add_executable(probaGenerator ${PROGRAM_SRC} programs/probaGenerator.c)
+add_executable(probaGenerator programs/probaGenerator.c)
 
 target_link_libraries(commandline fse ${OPENSSL_LIBRARIES} ${sodium_LIBRARY_RELEASE})
 target_link_libraries(fullbench   fse ${OPENSSL_LIBRARIES} ${sodium_LIBRARY_RELEASE})
