@@ -121,6 +121,7 @@ TEST_F(EncryptorTest, EncryptSingleBlock)
     printf("decompression_result: %zu\n", decompression_result);
 
     printf("Errror: %s\n", ERR_getErrorString(ERR_getErrorCode(decompression_result)));
+    printf("boo: %u\n", FSE_isError(decompression_result));
     ASSERT_TRUE(is_operation_successful(decompression_result));
 
     // compare
