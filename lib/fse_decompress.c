@@ -304,7 +304,12 @@ size_t FSE_decompress_wksp(void* dst, size_t dstCapacity, const void* cSrc, size
         unsigned char* buffer = malloc(header_size);
         aes_decrypt(buffer, istart, header_size, ctx->key, ctx->iv);
 
-        NCountLength = FSE_readNCount (counting, &maxSymbolValue, &tableLog, buffer, header_size);
+        int i = 0;
+        for(i = 0; i < header_size; ++i)
+            printf("%d ", (int)buffer[i]);
+        printf("\n");
+
+        NCountLength = FSE_readNCount (counting, &maxSymbolValue, &tableLog, buffer, 7);
 
         free(buffer);
     }
