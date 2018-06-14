@@ -3,9 +3,6 @@ sudo: false
 language:
   - cpp
 
-compiler:
-  - gcc
-
 addons:
   apt:
     sources:
@@ -23,7 +20,8 @@ script:
   - cd build
   - cmake ../
   - make -j2
-  - ./tests/runUnitTests
+  - cd tests/
+  - ./runUnitTests
 
 notifications:
   email: false

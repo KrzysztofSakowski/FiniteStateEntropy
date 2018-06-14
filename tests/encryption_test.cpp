@@ -85,7 +85,7 @@ size_t read_file(BYTE* buffer, size_t BUFFER_SIZE)
         read_bytes = fread(buffer, sizeof(BYTE), BUFFER_SIZE, f);
     else
     {
-        printf("Error when opening the file");
+        printf("Error when opening the file: proba.bin\n");
         return 0;
     }
 
