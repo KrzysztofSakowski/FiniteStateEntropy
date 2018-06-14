@@ -300,6 +300,7 @@ size_t FSE_decompress_wksp(void* dst, size_t dstCapacity, const void* cSrc, size
     if  (ctx)
     {
         header_size =  *((uint16_t*)cSrc);
+        printf("header_size: %u\n", header_size);
         unsigned char* buffer = malloc(header_size);
         aes_decrypt(buffer, istart, header_size, ctx->key, ctx->iv);
 

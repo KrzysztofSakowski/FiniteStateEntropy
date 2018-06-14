@@ -117,6 +117,7 @@ TEST_F(EncryptorTest, EncryptSingleBlock)
     BYTE* decompressed_buffer = (BYTE*) malloc(BUFFER_SIZE);
     size_t decompression_result = FSE_decompress(decompressed_buffer, BUFFER_SIZE, compressed_buffer, compression_result, &ctx);
 
+    printf("compression_result: %zu\n", compression_result);
     printf("decompression_result: %zu\n", decompression_result);
     ASSERT_TRUE(is_operation_successful(decompression_result));
 
