@@ -116,17 +116,19 @@ void pre_decompression_shuffle(UnshuffleType *ptr, const size_t SIZE, const unsi
 int aes_encrypt(unsigned char *dst, const unsigned char *src, const size_t SRC_SIZE,
                 const unsigned char* key, const unsigned char* iv)
 {
-    EVP_CIPHER_CTX en;
-    EVP_CIPHER_CTX_init(&en);
-    EVP_EncryptInit_ex(&en, EVP_aes_256_cbc(), NULL, key, iv);
+    EVP_CIPHER_CTX* en;
+    en = EVP_CIPHER_CTX_new();
+    EVP_CIPHER_CTX_init(en);
+    EVP_EncryptInit_ex(en, EVP_aes_256_cbc(), NULL, key, iv);
 
     int update_len, final_len;
 
-    EVP_EncryptUpdate(&en, dst, &update_len, src, (int)SRC_SIZE);
+    EVP_EncryptUpdate(en, dst, &update_len, src, (int)SRC_SIZE);
 
-    EVP_EncryptFinal_ex(&en, dst + update_len, &final_len);
+    EVP_EncryptFinal_ex(en, dst + update_len, &final_len);
 
-    EVP_CIPHER_CTX_cleanup(&en);
+    EVP_CIPHER_CTX_cleanup(en);
+    EVP_CIPHER_CTX_free(en);
 
     return update_len + final_len;
 }
@@ -134,17 +136,19 @@ int aes_encrypt(unsigned char *dst, const unsigned char *src, const size_t SRC_S
 int aes_decrypt(unsigned char *dst, const unsigned char *src, size_t SRC_SIZE,
                 const unsigned char* key, const unsigned char* iv)
 {
-    EVP_CIPHER_CTX de;
-    EVP_CIPHER_CTX_init(&de);
+    EVP_CIPHER_CTX* de;
+    de = EVP_CIPHER_CTX_new();
+    EVP_CIPHER_CTX_init(de);
 
-    EVP_DecryptInit_ex(&de, EVP_aes_256_cbc(), NULL, key, iv);
+    EVP_DecryptInit_ex(de, EVP_aes_256_cbc(), NULL, key, iv);
 
     int update_len, final_len;
 
-    EVP_DecryptUpdate(&de, dst, &update_len, src, (int)SRC_SIZE);
-    EVP_DecryptFinal_ex(&de, dst + update_len, &final_len);
+    EVP_DecryptUpdate(de, dst, &update_len, src, (int)SRC_SIZE);
+    EVP_DecryptFinal_ex(de, dst + update_len, &final_len);
 
-    EVP_CIPHER_CTX_cleanup(&de);
+    EVP_CIPHER_CTX_cleanup(de);
+    EVP_CIPHER_CTX_free(de);
 
     return update_len + final_len;
 }
