@@ -119,14 +119,6 @@ TEST_F(EncryptorTest, EncryptSingleBlockNull)
     {
         int is_ok;
 
-        for(int i = 0; i < 30; ++i)
-            printf("%d ", (int)decompressed_buffer[i]);
-        printf("\n");
-
-        int part_res = memcmp(buffer, decompressed_buffer, decompression_result);
-        printf("part_res ok: %d\n", (part_res == 0));
-
-
         if (decompression_result == read_bytes)
         {
             int cmp_result = memcmp(buffer, decompressed_buffer, read_bytes);
