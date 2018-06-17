@@ -113,9 +113,6 @@ TEST_F(EncryptorTest, EncryptSingleBlockNull)
     BYTE* decompressed_buffer = (BYTE*) malloc(BUFFER_SIZE);
     size_t decompression_result = FSE_decompress(decompressed_buffer, BUFFER_SIZE, compressed_buffer, compression_result, NULL);
 
-    printf("compression_result: %zu\n", compression_result);
-    printf("decompression_result: %zu\n", decompression_result);
-
     ASSERT_TRUE(is_operation_successful(decompression_result));
 
     // compare
@@ -169,24 +166,11 @@ TEST_F(EncryptorTest, EncryptSingleBlock)
     BYTE* decompressed_buffer = (BYTE*) malloc(BUFFER_SIZE);
     size_t decompression_result = FSE_decompress(decompressed_buffer, BUFFER_SIZE, compressed_buffer, compression_result, &ctx);
 
-    printf("compression_result: %zu\n", compression_result);
-    printf("decompression_result: %zu\n", decompression_result);
-
-//    printf("Errror: %s\n", ERR_getErrorString(ERR_getErrorCode(decompression_result)));
-//    printf("boo: %u\n", FSE_isError(decompression_result));
     ASSERT_TRUE(is_operation_successful(decompression_result));
 
     // compare
     {
         int is_ok;
-
-        for(int i = 0; i < 30; ++i)
-            printf("%d ", (int)decompressed_buffer[i]);
-        printf("\n");
-
-        int part_res = memcmp(buffer, decompressed_buffer, decompression_result);
-        printf("part_res ok: %d\n", (part_res == 0));
-
 
         if (decompression_result == read_bytes)
         {

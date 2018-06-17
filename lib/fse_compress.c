@@ -828,23 +828,14 @@ size_t FSE_compress_wksp (void* dst, size_t dstSize, const void* src, size_t src
             unsigned char* buffer = (unsigned char*)malloc(nc_err);
             memcpy(buffer, op, nc_err);
 
-            int i = 0;
-            for(i = 0; i < nc_err; ++i)
-                printf("%d ", (int)buffer[i]);
-            printf("\n");
-
             int header_size = aes_encrypt(op, buffer, nc_err, ctx->key, ctx->iv);
             op += header_size;
-            printf("header_size: %d\n", header_size);
-            printf("header_size: %zu\n", nc_err);
-
 
             *((uint16_t*)dst) = (uint16_t)header_size;
             free(buffer);
         }
-        else {
+        else
             op += nc_err;
-        }
     }
 
     /* Compress */

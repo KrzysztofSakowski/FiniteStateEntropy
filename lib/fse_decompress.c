@@ -38,7 +38,6 @@
 ****************************************************************/
 #include <stdlib.h>     /* malloc, free, qsort */
 #include <string.h>     /* memcpy, memset */
-#include <stdio.h> // TODO: remove
 #include "bitstream.h"
 #include "compiler.h"
 #define FSE_STATIC_LINKING_ONLY
@@ -300,7 +299,6 @@ size_t FSE_decompress_wksp(void* dst, size_t dstCapacity, const void* cSrc, size
     if  (ctx)
     {
         header_size =  *((uint16_t*)cSrc);
-
         unsigned char* buffer = malloc(header_size);
         aes_decrypt(buffer, istart, header_size, ctx->key, ctx->iv);
 
@@ -324,7 +322,6 @@ size_t FSE_decompress_wksp(void* dst, size_t dstCapacity, const void* cSrc, size
     {
         ip += NCountLength;
         cSrcSize -= NCountLength;
-
     }
 
     CHECK_F( FSE_buildDTable (workSpace, counting, maxSymbolValue, tableLog, ctx) );
