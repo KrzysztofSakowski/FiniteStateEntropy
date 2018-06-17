@@ -94,6 +94,58 @@ size_t read_file(BYTE* buffer, size_t BUFFER_SIZE)
     return read_bytes;
 }
 
+TEST_F(EncryptorTest, EncryptSingleBlockNull)
+{
+    // read sample data
+    const size_t BUFFER_SIZE = 100000;
+    BYTE* buffer = (BYTE*) malloc(BUFFER_SIZE);
+
+    size_t read_bytes = read_file(buffer, BUFFER_SIZE);
+    ASSERT_TRUE(read_bytes > 0);
+
+    // compress
+    BYTE* compressed_buffer = (BYTE*) malloc(BUFFER_SIZE);
+    size_t compression_result = FSE_compress(compressed_buffer, BUFFER_SIZE, buffer, read_bytes, NULL);
+
+    ASSERT_TRUE(is_operation_successful(compression_result));
+
+    // decompress
+    BYTE* decompressed_buffer = (BYTE*) malloc(BUFFER_SIZE);
+    size_t decompression_result = FSE_decompress(decompressed_buffer, BUFFER_SIZE, compressed_buffer, compression_result, NULL);
+
+    printf("compression_result: %zu\n", compression_result);
+    printf("decompression_result: %zu\n", decompression_result);
+
+    ASSERT_TRUE(is_operation_successful(decompression_result));
+
+    // compare
+    {
+        int is_ok;
+
+        for(int i = 0; i < 30; ++i)
+            printf("%d ", (int)decompressed_buffer[i]);
+        printf("\n");
+
+        int part_res = memcmp(buffer, decompressed_buffer, decompression_result);
+        printf("part_res ok: %d\n", (part_res == 0));
+
+
+        if (decompression_result == read_bytes)
+        {
+            int cmp_result = memcmp(buffer, decompressed_buffer, read_bytes);
+            is_ok = (cmp_result == 0);
+        }
+        else
+            is_ok = 0;
+
+        ASSERT_TRUE(is_ok);
+    }
+
+    free(decompressed_buffer);
+    free(compressed_buffer);
+    free(buffer);
+}
+
 TEST_F(EncryptorTest, EncryptSingleBlock)
 {
     // read sample data
@@ -154,7 +206,7 @@ TEST_F(EncryptorTest, EncryptSingleBlock)
     free(buffer);
 }
 
-TEST_F(EncryptorTest, DISABLED_EncryptManyBlocks)
+TEST_F(EncryptorTest, EncryptManyBlocks)
 {
     const size_t BUFFER_SIZE = 100000;
 
@@ -200,7 +252,7 @@ TEST_F(EncryptorTest, DISABLED_EncryptManyBlocks)
     free(decompress_buffer);
 }
 
-TEST_F(EncryptorTest, DISABLED_CustomKey)
+TEST_F(EncryptorTest, CustomKey)
 {
     const size_t BUFFER_SIZE = 100000;
     const unsigned char CUSTOM_KEY[] = {43, 23, 123, 33, 40, 4};

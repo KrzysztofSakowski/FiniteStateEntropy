@@ -300,16 +300,11 @@ size_t FSE_decompress_wksp(void* dst, size_t dstCapacity, const void* cSrc, size
     if  (ctx)
     {
         header_size =  *((uint16_t*)cSrc);
-        printf("header_size: %u\n", header_size);
+
         unsigned char* buffer = malloc(header_size);
         aes_decrypt(buffer, istart, header_size, ctx->key, ctx->iv);
 
-        int i = 0;
-        for(i = 0; i < header_size; ++i)
-            printf("%d ", (int)buffer[i]);
-        printf("\n");
-
-        NCountLength = FSE_readNCount (counting, &maxSymbolValue, &tableLog, buffer, 7);
+        NCountLength = FSE_readNCount (counting, &maxSymbolValue, &tableLog, buffer, header_size);
 
         free(buffer);
     }
@@ -317,23 +312,22 @@ size_t FSE_decompress_wksp(void* dst, size_t dstCapacity, const void* cSrc, size
         /* normal FSE decoding mode */
         NCountLength = FSE_readNCount (counting, &maxSymbolValue, &tableLog, istart, cSrcSize);
 
-    printf("1\n");
-
     if (FSE_isError(NCountLength)) return NCountLength;
-    printf("2\n");
     //if (NCountLength >= cSrcSize) return ERROR(srcSize_wrong);   /* too small input size; supposed to be already checked in NCountLength, only remaining case : NCountLength==cSrcSize */
     if (tableLog > maxLog) return ERROR(tableLog_tooLarge);
-    printf("3\n");
     if (ctx)
     {
         ip += header_size;
         cSrcSize -= header_size;
     }
-    printf("4\n");
+    else
+    {
+        ip += NCountLength;
+        cSrcSize -= NCountLength;
+
+    }
 
     CHECK_F( FSE_buildDTable (workSpace, counting, maxSymbolValue, tableLog, ctx) );
-
-    printf("5\n");
 
     return FSE_decompress_usingDTable (dst, dstCapacity, ip, cSrcSize, workSpace);   /* always return, even if it is an error code */
 }
