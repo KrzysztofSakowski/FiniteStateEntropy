@@ -76,7 +76,7 @@ void pre_compression_shuffle(ShuffleType* ptr, const size_t SIZE, const unsigned
 
     for (i = 0; i+SHUFFLE_BLOCK_SIZE <= SIZE; i += SHUFFLE_BLOCK_SIZE)
     {
-        shuffle = buffer[i] % SHUFFLE_BLOCK_SIZE;
+        shuffle = buffer[i/SHUFFLE_BLOCK_SIZE] % SHUFFLE_BLOCK_SIZE;
 
 #ifdef SHUFFLE_64
         bit_rotate_64((uint64_t *)(ptr + i), (unsigned int) shuffle);
@@ -102,7 +102,7 @@ void pre_decompression_shuffle(UnshuffleType *ptr, const size_t SIZE, const unsi
 
     for (i = 0; i+SHUFFLE_BLOCK_SIZE <= SIZE; i += SHUFFLE_BLOCK_SIZE)
     {
-        shuffle = buffer[i] % SHUFFLE_BLOCK_SIZE;
+        shuffle = buffer[i/SHUFFLE_BLOCK_SIZE] % SHUFFLE_BLOCK_SIZE;
         rotate2(ptr+i, ptr+i+shuffle, ptr+i+SHUFFLE_BLOCK_SIZE);
     }
 
