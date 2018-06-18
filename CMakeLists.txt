@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 3.7)
 project(fse)
 
-include_directories(lib/)
-
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+
+include_directories(lib/)
 
 find_package(OpenSSL REQUIRED)
 include_directories(${OpenSSL_INCLUDE_DIR})
@@ -45,7 +46,7 @@ add_library(fse ${LIB_SRC})
 
 add_executable(commandline    ${PROGRAM_SRC} programs/commandline.c)
 add_executable(fullbench      ${PROGRAM_SRC} programs/fullbench.c)
-add_executable(probaGenerator ${PROGRAM_SRC} programs/probaGenerator.c)
+add_executable(probaGenerator programs/probaGenerator.c)
 
 target_link_libraries(commandline fse ${OPENSSL_LIBRARIES} ${sodium_LIBRARY_RELEASE})
 target_link_libraries(fullbench   fse ${OPENSSL_LIBRARIES} ${sodium_LIBRARY_RELEASE})

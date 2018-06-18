@@ -830,12 +830,12 @@ size_t FSE_compress_wksp (void* dst, size_t dstSize, const void* src, size_t src
 
             int header_size = aes_encrypt(op, buffer, nc_err, ctx->key, ctx->iv);
             op += header_size;
+
             *((uint16_t*)dst) = (uint16_t)header_size;
             free(buffer);
         }
-        else {
+        else
             op += nc_err;
-        }
     }
 
     /* Compress */

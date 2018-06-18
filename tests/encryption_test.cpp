@@ -84,11 +84,55 @@ size_t read_file(BYTE* buffer, size_t BUFFER_SIZE)
     if (f)
         read_bytes = fread(buffer, sizeof(BYTE), BUFFER_SIZE, f);
     else
-        printf("Error when opening the file");
+    {
+        printf("Error when opening the file: proba.bin\n");
+        return 0;
+    }
 
     fclose(f);
 
     return read_bytes;
+}
+
+TEST_F(EncryptorTest, EncryptSingleBlockNull)
+{
+    // read sample data
+    const size_t BUFFER_SIZE = 100000;
+    BYTE* buffer = (BYTE*) malloc(BUFFER_SIZE);
+
+    size_t read_bytes = read_file(buffer, BUFFER_SIZE);
+    ASSERT_TRUE(read_bytes > 0);
+
+    // compress
+    BYTE* compressed_buffer = (BYTE*) malloc(BUFFER_SIZE);
+    size_t compression_result = FSE_compress(compressed_buffer, BUFFER_SIZE, buffer, read_bytes, NULL);
+
+    ASSERT_TRUE(is_operation_successful(compression_result));
+
+    // decompress
+    BYTE* decompressed_buffer = (BYTE*) malloc(BUFFER_SIZE);
+    size_t decompression_result = FSE_decompress(decompressed_buffer, BUFFER_SIZE, compressed_buffer, compression_result, NULL);
+
+    ASSERT_TRUE(is_operation_successful(decompression_result));
+
+    // compare
+    {
+        int is_ok;
+
+        if (decompression_result == read_bytes)
+        {
+            int cmp_result = memcmp(buffer, decompressed_buffer, read_bytes);
+            is_ok = (cmp_result == 0);
+        }
+        else
+            is_ok = 0;
+
+        ASSERT_TRUE(is_ok);
+    }
+
+    free(decompressed_buffer);
+    free(compressed_buffer);
+    free(buffer);
 }
 
 TEST_F(EncryptorTest, EncryptSingleBlock)
@@ -98,6 +142,7 @@ TEST_F(EncryptorTest, EncryptSingleBlock)
     BYTE* buffer = (BYTE*) malloc(BUFFER_SIZE);
 
     size_t read_bytes = read_file(buffer, BUFFER_SIZE);
+    ASSERT_TRUE(read_bytes > 0);
 
     EncryptionCtx ctx;
 
@@ -145,6 +190,7 @@ TEST_F(EncryptorTest, EncryptManyBlocks)
     BYTE* buffer = (BYTE*) malloc(BUFFER_SIZE);
 
     size_t read_bytes = read_file(buffer, BUFFER_SIZE);
+    ASSERT_TRUE(read_bytes > 0);
 
     // compress
     BYTE* compressed_buffer = (BYTE*) malloc(BUFFER_SIZE);
@@ -191,6 +237,7 @@ TEST_F(EncryptorTest, CustomKey)
     BYTE* buffer = (BYTE*) malloc(BUFFER_SIZE);
 
     size_t read_bytes = read_file(buffer, BUFFER_SIZE);
+    ASSERT_TRUE(read_bytes > 0);
 
     // compress
     BYTE* compressed_buffer = (BYTE*) malloc(BUFFER_SIZE);
