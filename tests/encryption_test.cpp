@@ -1,18 +1,20 @@
 #include "gtest/gtest.h"
 
-#include <vector>
+#include "helper.h"
+
+#include <encryptor.h>
+
 #include <algorithm>
 #include <climits>
-
-#include <fse.h>
-#include <encryptor.h>
-#include <encryptor_ctx.h>
+#include <vector>
 
 
-class EncryptorTest : public testing::Test {
+class EncryptorTest : public ::testing::TestWithParam<const char*> {
+public:
+    static const char* FILE_70;
+    static const char* FILE_30;
+
 protected:
-    const static int SHUFFLE_STEP = 7;
-
     const unsigned char KEY[32] = {
             1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8
     };
@@ -22,85 +24,21 @@ protected:
     };
 };
 
-TEST_F(EncryptorTest, BitRotate)
+const char* EncryptorTest::FILE_70 = "proba_70.bin";
+const char* EncryptorTest::FILE_30 = "proba_30.bin";
+
+INSTANTIATE_TEST_CASE_P(DifferentBinaryFiles, EncryptorTest,
+                        ::testing::ValuesIn({EncryptorTest::FILE_70, EncryptorTest::FILE_30}));
+
+TEST_P(EncryptorTest, EncryptSingleBlockNull)
 {
-    std::vector<ShuffleType> data = {
-            0, 1, 2, 3, 4, 5, 6, 7
-    };
+    const char* FILE_NAME = GetParam();
 
-    auto data2 = data;
-
-    bit_rotate_64(reinterpret_cast<uint64_t *>(data.data()), SHUFFLE_STEP);
-
-    std::rotate(data2.begin(), data2.begin()+SHUFFLE_STEP, data2.end());
-
-    ASSERT_EQ(data, data2);
-}
-
-TEST_F(EncryptorTest, Shuffle)
-{
-    std::vector<ShuffleType> data = {
-      0, 1, 2, 3, 4, 5, 6, 7
-    };
-
-    auto data2 = data;
-
-    rotate(data.data(), data.data()+SHUFFLE_STEP,  data.data()+data.size());
-
-    std::rotate(data2.begin(), data2.begin()+SHUFFLE_STEP, data2.end());
-
-    ASSERT_EQ(data, data2);
-}
-
-TEST_F(EncryptorTest, Unshuffle)
-{
-    std::vector<UnshuffleType> data = {
-            {0, 0, 0}, {1, 1, 1}, {2, 2, 2}, {3, 3, 3}, {4, 4, 4}, {5, 5, 5}, {6, 6, 6}, {7, 7, 7}
-    };
-
-    auto data2 = data;
-
-    rotate2(data.data(), data.data()+SHUFFLE_STEP,  data.data()+data.size());
-
-    std::rotate(data2.begin(), data2.begin()+SHUFFLE_STEP, data2.end());
-
-    for (size_t i = 0; i < data.size(); ++i)
-    {
-        const auto& s1 = data[i];
-        const auto& s2 = data2[i];
-
-        ASSERT_EQ(s1.nbBits, s2.nbBits);
-        ASSERT_EQ(s1.newState, s2.newState);
-        ASSERT_EQ(s1.symbol, s2.symbol);
-    }
-}
-
-size_t read_file(BYTE* buffer, size_t BUFFER_SIZE)
-{
-    FILE *f;
-    size_t read_bytes = 0;
-
-    f = fopen("proba.bin", "rb");
-    if (f)
-        read_bytes = fread(buffer, sizeof(BYTE), BUFFER_SIZE, f);
-    else
-    {
-        printf("Error when opening the file: proba.bin\n");
-        return 0;
-    }
-
-    fclose(f);
-
-    return read_bytes;
-}
-
-TEST_F(EncryptorTest, EncryptSingleBlockNull)
-{
     // read sample data
     const size_t BUFFER_SIZE = 100000;
     BYTE* buffer = (BYTE*) malloc(BUFFER_SIZE);
 
-    size_t read_bytes = read_file(buffer, BUFFER_SIZE);
+    size_t read_bytes = read_file(buffer, BUFFER_SIZE, FILE_NAME);
     ASSERT_TRUE(read_bytes > 0);
 
     // compress
@@ -135,13 +73,15 @@ TEST_F(EncryptorTest, EncryptSingleBlockNull)
     free(buffer);
 }
 
-TEST_F(EncryptorTest, EncryptSingleBlock)
+TEST_P(EncryptorTest, EncryptSingleBlock)
 {
+    const char* FILE_NAME = GetParam();
+
     // read sample data
     const size_t BUFFER_SIZE = 100000;
     BYTE* buffer = (BYTE*) malloc(BUFFER_SIZE);
 
-    size_t read_bytes = read_file(buffer, BUFFER_SIZE);
+    size_t read_bytes = read_file(buffer, BUFFER_SIZE, FILE_NAME);
     ASSERT_TRUE(read_bytes > 0);
 
     EncryptionCtx ctx;
@@ -182,14 +122,16 @@ TEST_F(EncryptorTest, EncryptSingleBlock)
     free(buffer);
 }
 
-TEST_F(EncryptorTest, EncryptManyBlocks)
+TEST_P(EncryptorTest, EncryptManyBlocks)
 {
+    const char* FILE_NAME = GetParam();
+
     const size_t BUFFER_SIZE = 100000;
 
     // get data
     BYTE* buffer = (BYTE*) malloc(BUFFER_SIZE);
 
-    size_t read_bytes = read_file(buffer, BUFFER_SIZE);
+    size_t read_bytes = read_file(buffer, BUFFER_SIZE, FILE_NAME);
     ASSERT_TRUE(read_bytes > 0);
 
     // compress
@@ -228,15 +170,17 @@ TEST_F(EncryptorTest, EncryptManyBlocks)
     free(decompress_buffer);
 }
 
-TEST_F(EncryptorTest, CustomKey)
+TEST_P(EncryptorTest, CustomKey)
 {
+    const char* FILE_NAME = GetParam();
+
     const size_t BUFFER_SIZE = 100000;
     const unsigned char CUSTOM_KEY[] = {43, 23, 123, 33, 40, 4};
 
     // get data
     BYTE* buffer = (BYTE*) malloc(BUFFER_SIZE);
 
-    size_t read_bytes = read_file(buffer, BUFFER_SIZE);
+    size_t read_bytes = read_file(buffer, BUFFER_SIZE, FILE_NAME);
     ASSERT_TRUE(read_bytes > 0);
 
     // compress
