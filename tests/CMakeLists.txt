@@ -24,7 +24,7 @@ set(test_SRCS
         encryption_test.cpp
         aes_test.cpp
         helper_test.cpp
-        helper.h
+        helpers.h
         helpers.cpp
         )
 

@@ -1,3 +1,12 @@
+# Masters thesis [![Build Status](https://travis-ci.org/KrzysztofSakowski/FiniteStateEntropy.svg?branch=thesis)](https://travis-ci.org/KrzysztofSakowski/FiniteStateEntropy/)
+This fork of [Finite state entropy coder](https://github.com/Cyan4973/FiniteStateEntropy) is implementation of my master
+thesis: _Simultaneous encryption for Finite State Entropy_. It is basing on table implementation of FSE.
+Idea is to encrypt header with industry standard algorithm (AES) and shuffle states in state machine.
+This is done using secret key provided by the client. It is supposed to be light encryption but possibly less secure.
+
+Based on [Jarek Duda paper](https://arxiv.org/pdf/1612.04662.pdf): _Lightweight compression with encryption
+based on Asymmetric Numeral Systems_.
+
 New Generation Entropy coders
 =============================
 

@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "helper.h"
+#include "helpers.h"
 
 #include <encryptor.h>
 
