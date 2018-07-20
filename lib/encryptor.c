@@ -18,7 +18,7 @@
 #endif
 
 static const size_t SHUFFLE_BLOCK_SIZE = 8;
-static const size_t BLOCK_SIZE = 30000;
+static const size_t BLOCK_SIZE = 30000; // with current implementation max is 2^16  / 2 = 2^15
 
 // https://stackoverflow.com/questions/776508/best-practices-for-circular-shift-rotate-operations-in-c
 void bit_rotate_64(uint64_t *n, unsigned int c)
@@ -226,10 +226,10 @@ size_t compression_helper(void* dst, size_t dstCapacity, const void* src, size_t
 size_t compress_with_blocks(void *dst, size_t dstCapacity, const void *src, size_t srcSize, const unsigned char *KEY,
                             size_t KEY_DATA_SIZE, const unsigned char *SALT)
 {
-    uint32_t block_count = (uint32_t)(srcSize / BLOCK_SIZE);
+    const uint32_t block_count = (uint32_t)(srcSize / BLOCK_SIZE);
 
     size_t src_offset = 0;
-    size_t dst_offset = sizeof(uint32_t) + (block_count-1) * sizeof(uint16_t);
+    size_t dst_offset = sizeof(uint32_t) + block_count * sizeof(uint16_t);
 
     ((uint32_t*)dst)[0] = block_count;
     uint32_t block_id;
@@ -256,6 +256,9 @@ size_t compress_with_blocks(void *dst, size_t dstCapacity, const void *src, size
         if (!is_operation_successful(compression_result))
             return compression_result;
 
+        // +2 is compensation for block_count which size is 2*uint16_t
+        ((uint16_t*)dst)[2+block_id] = (uint16_t)compression_result;
+
         dst_offset += compression_result;
     }
 
@@ -279,9 +282,9 @@ size_t decompression_helper(void* dst, size_t dstCapacity, const void* src, size
 size_t decompress_with_blocks(void *dst, size_t dstCapacity, const void *src, size_t srcSize, const unsigned char *KEY,
                               size_t KEY_DATA_SIZE, const unsigned char *SALT)
 {
-    uint32_t block_count = ((uint32_t*)src)[0];
+    const uint32_t block_count = ((uint32_t*)src)[0];
 
-    size_t src_offset = sizeof(uint32_t) + (block_count-1) * sizeof(uint16_t);
+    size_t src_offset = sizeof(uint32_t) + block_count * sizeof(uint16_t);
     size_t dst_offset = 0;
     uint32_t block_id;
 
@@ -291,7 +294,7 @@ size_t decompress_with_blocks(void *dst, size_t dstCapacity, const void *src, si
         uint16_t current_block_size = ((uint16_t*)src)[block_id+2];
 
         size_t decompression_result = decompression_helper(dst + dst_offset, dstCapacity - dst_offset, src + src_offset,
-                                                           current_block_size, KEY, KEY_DATA_SIZE,  SALT, block_id);
+                                                           current_block_size, KEY, KEY_DATA_SIZE, SALT, block_id);
 
         if (!is_operation_successful(decompression_result))
             return decompression_result;
@@ -301,8 +304,11 @@ size_t decompress_with_blocks(void *dst, size_t dstCapacity, const void *src, si
     }
 
     {
+        // +2 is compensation for block_count which size is 2*uint16_t
+        uint16_t current_block_size = ((uint16_t*)src)[2+block_id];
+
         size_t decompression_result = decompression_helper(dst + dst_offset, dstCapacity - dst_offset, src + src_offset,
-                                                           srcSize - src_offset, KEY, KEY_DATA_SIZE, SALT, block_count-1);
+                                                           current_block_size, KEY, KEY_DATA_SIZE, SALT, block_count-1);
 
         if (!is_operation_successful(decompression_result))
             return decompression_result;
