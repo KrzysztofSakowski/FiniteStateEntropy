@@ -214,3 +214,49 @@ TEST_P(EncryptorTest, CustomKey)
     free(compressed_buffer);
     free(decompress_buffer);
 }
+
+TEST_P(EncryptorTest, WithBlocksNoEncryption)
+{
+    const char* FILE_NAME = GetParam();
+
+    // get data
+    BYTE* buffer = (BYTE*) malloc(BUFFER_SIZE);
+
+    const size_t read_bytes = read_file(buffer, BUFFER_SIZE, FILE_NAME);
+    ASSERT_TRUE(read_bytes > 0);
+
+    // compress
+    BYTE* compressed_buffer = (BYTE*) malloc(BUFFER_SIZE);
+    size_t compression_result = compress_with_blocks(compressed_buffer, BUFFER_SIZE, buffer, read_bytes, NULL, 0, NULL);
+
+    ASSERT_TRUE(is_operation_successful(compression_result));
+
+    // decompress
+    BYTE* decompress_buffer = (BYTE*) malloc(BUFFER_SIZE);
+    size_t decompression_result = decompress_with_blocks(decompress_buffer, BUFFER_SIZE, compressed_buffer,
+                                                         compression_result, NULL, 0, NULL);
+
+    ASSERT_TRUE(is_operation_successful(decompression_result));
+
+    // compare
+    {
+        int is_ok;
+
+        ASSERT_EQ(decompression_result, read_bytes);
+
+        if (decompression_result == read_bytes)
+        {
+            int cmp_result = memcmp(buffer, decompress_buffer, read_bytes);
+            is_ok = (cmp_result == 0);
+        }
+        else
+            is_ok = 0;
+
+        ASSERT_TRUE(is_ok);
+    }
+
+    // clean up
+    free(buffer);
+    free(compressed_buffer);
+    free(decompress_buffer);
+}

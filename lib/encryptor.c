@@ -226,6 +226,7 @@ size_t compression_helper(void* dst, size_t dstCapacity, const void* src, size_t
 size_t compress_with_blocks(void *dst, size_t dstCapacity, const void *src, size_t srcSize, const unsigned char *KEY,
                             size_t KEY_DATA_SIZE, const unsigned char *SALT)
 {
+    const int USE_ENCRYPTION = KEY != NULL && KEY_DATA_SIZE > 0 && SALT != NULL;
     const uint32_t block_count = (uint32_t)(srcSize / BLOCK_SIZE);
 
     size_t src_offset = 0;
@@ -236,8 +237,14 @@ size_t compress_with_blocks(void *dst, size_t dstCapacity, const void *src, size
 
     for (block_id = 0; block_id+1 < block_count; ++block_id)
     {
-        size_t compression_result = compression_helper(dst + dst_offset, dstCapacity - dst_offset,
-                                                       src + src_offset, BLOCK_SIZE, KEY, KEY_DATA_SIZE, SALT, block_id);
+        size_t compression_result;
+
+        if (USE_ENCRYPTION)
+            compression_result = compression_helper(dst + dst_offset, dstCapacity - dst_offset,
+                                                    src + src_offset, BLOCK_SIZE, KEY, KEY_DATA_SIZE, SALT, block_id);
+        else
+            compression_result = FSE_compress(dst + dst_offset, dstCapacity - dst_offset, src + src_offset, BLOCK_SIZE, NULL);
+
 
         if (!is_operation_successful(compression_result))
             return compression_result;
@@ -250,8 +257,13 @@ size_t compress_with_blocks(void *dst, size_t dstCapacity, const void *src, size
     }
 
     {
-        size_t compression_result = compression_helper(dst + dst_offset, dstCapacity - dst_offset, src + src_offset,
-                                                       srcSize - src_offset, KEY, KEY_DATA_SIZE, SALT, block_count-1);
+        size_t compression_result;
+
+        if (USE_ENCRYPTION)
+            compression_result = compression_helper(dst + dst_offset, dstCapacity - dst_offset, src + src_offset,
+                                                    srcSize - src_offset, KEY, KEY_DATA_SIZE, SALT, block_count - 1);
+        else
+            compression_result = FSE_compress(dst + dst_offset, dstCapacity - dst_offset, src + src_offset, srcSize - src_offset, NULL);
 
         if (!is_operation_successful(compression_result))
             return compression_result;
@@ -282,6 +294,8 @@ size_t decompression_helper(void* dst, size_t dstCapacity, const void* src, size
 size_t decompress_with_blocks(void *dst, size_t dstCapacity, const void *src, size_t srcSize, const unsigned char *KEY,
                               size_t KEY_DATA_SIZE, const unsigned char *SALT)
 {
+    const int USE_ENCRYPTION = KEY != NULL && KEY_DATA_SIZE > 0 && SALT != NULL;
+
     const uint32_t block_count = ((uint32_t*)src)[0];
 
     size_t src_offset = sizeof(uint32_t) + block_count * sizeof(uint16_t);
@@ -293,8 +307,15 @@ size_t decompress_with_blocks(void *dst, size_t dstCapacity, const void *src, si
         // +2 is compensation for block_count which size is 2*uint16_t
         uint16_t current_block_size = ((uint16_t*)src)[block_id+2];
 
-        size_t decompression_result = decompression_helper(dst + dst_offset, dstCapacity - dst_offset, src + src_offset,
-                                                           current_block_size, KEY, KEY_DATA_SIZE, SALT, block_id);
+        size_t decompression_result;
+
+        if (USE_ENCRYPTION)
+            decompression_result = decompression_helper(dst + dst_offset, dstCapacity - dst_offset, src + src_offset,
+                                                        current_block_size, KEY, KEY_DATA_SIZE, SALT, block_id);
+        else
+            decompression_result = FSE_decompress(dst + dst_offset, dstCapacity - dst_offset, src + src_offset,
+                                                  current_block_size, NULL);
+
 
         if (!is_operation_successful(decompression_result))
             return decompression_result;
@@ -307,8 +328,15 @@ size_t decompress_with_blocks(void *dst, size_t dstCapacity, const void *src, si
         // +2 is compensation for block_count which size is 2*uint16_t
         uint16_t current_block_size = ((uint16_t*)src)[2+block_id];
 
-        size_t decompression_result = decompression_helper(dst + dst_offset, dstCapacity - dst_offset, src + src_offset,
-                                                           current_block_size, KEY, KEY_DATA_SIZE, SALT, block_count-1);
+        size_t decompression_result;
+
+        if (USE_ENCRYPTION)
+            decompression_result = decompression_helper(dst + dst_offset, dstCapacity - dst_offset, src + src_offset,
+                                                        current_block_size, KEY, KEY_DATA_SIZE, SALT, block_count - 1);
+        else
+            decompression_result = FSE_decompress(dst + dst_offset, dstCapacity - dst_offset, src + src_offset,
+                                                  current_block_size, NULL);
+
 
         if (!is_operation_successful(decompression_result))
             return decompression_result;
