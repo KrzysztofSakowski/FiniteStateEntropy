@@ -243,7 +243,8 @@ size_t compress_with_blocks(void *dst, size_t dstCapacity, const void *src, size
             compression_result = compression_helper(dst + dst_offset, dstCapacity - dst_offset,
                                                     src + src_offset, BLOCK_SIZE, KEY, KEY_DATA_SIZE, SALT, block_id);
         else
-            compression_result = FSE_compress(dst + dst_offset, dstCapacity - dst_offset, src + src_offset, BLOCK_SIZE, NULL);
+            compression_result = FSE_compress(dst + dst_offset, dstCapacity - dst_offset, src + src_offset, BLOCK_SIZE,
+                                              NULL);
 
 
         if (!is_operation_successful(compression_result))
@@ -263,7 +264,8 @@ size_t compress_with_blocks(void *dst, size_t dstCapacity, const void *src, size
             compression_result = compression_helper(dst + dst_offset, dstCapacity - dst_offset, src + src_offset,
                                                     srcSize - src_offset, KEY, KEY_DATA_SIZE, SALT, block_count - 1);
         else
-            compression_result = FSE_compress(dst + dst_offset, dstCapacity - dst_offset, src + src_offset, srcSize - src_offset, NULL);
+            compression_result = FSE_compress(dst + dst_offset, dstCapacity - dst_offset, src + src_offset,
+                                              srcSize - src_offset, NULL);
 
         if (!is_operation_successful(compression_result))
             return compression_result;

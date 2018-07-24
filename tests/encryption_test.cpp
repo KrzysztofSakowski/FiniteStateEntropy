@@ -38,18 +38,19 @@ TEST_P(EncryptorTest, EncryptSingleBlockNull)
     // read sample data
     BYTE* buffer = (BYTE*) malloc(BUFFER_SIZE);
 
-    const size_t READ_BYTES = read_file(buffer, BUFFER_SIZE, FILE_NAME);
-    ASSERT_TRUE(READ_BYTES > 0);
+    const size_t read_bytes = read_file(buffer, BUFFER_SIZE, FILE_NAME);
+    ASSERT_TRUE(read_bytes > 0);
 
     // compress
     BYTE* compressed_buffer = (BYTE*) malloc(BUFFER_SIZE);
-    size_t compression_result = FSE_compress(compressed_buffer, BUFFER_SIZE, buffer, READ_BYTES, NULL);
+    size_t compression_result = FSE_compress(compressed_buffer, BUFFER_SIZE, buffer, read_bytes, NULL);
 
     ASSERT_TRUE(is_operation_successful(compression_result));
 
     // decompress
     BYTE* decompressed_buffer = (BYTE*) malloc(BUFFER_SIZE);
-    size_t decompression_result = FSE_decompress(decompressed_buffer, BUFFER_SIZE, compressed_buffer, compression_result, NULL);
+    size_t decompression_result = FSE_decompress(decompressed_buffer, BUFFER_SIZE, compressed_buffer,
+                                                 compression_result, NULL);
 
     ASSERT_TRUE(is_operation_successful(decompression_result));
 
@@ -57,9 +58,9 @@ TEST_P(EncryptorTest, EncryptSingleBlockNull)
     {
         int is_ok;
 
-        if (decompression_result == READ_BYTES)
+        if (decompression_result == read_bytes)
         {
-            int cmp_result = memcmp(buffer, decompressed_buffer, READ_BYTES);
+            int cmp_result = memcmp(buffer, decompressed_buffer, read_bytes);
             is_ok = (cmp_result == 0);
         }
         else
@@ -95,7 +96,8 @@ TEST_P(EncryptorTest, EncryptSingleBlock)
 
     // decompress
     BYTE* decompressed_buffer = (BYTE*) malloc(BUFFER_SIZE);
-    size_t decompression_result = FSE_decompress(decompressed_buffer, BUFFER_SIZE, compressed_buffer, compression_result, &ctx);
+    size_t decompression_result = FSE_decompress(decompressed_buffer, BUFFER_SIZE, compressed_buffer,
+                                                 compression_result, &ctx);
 
     ASSERT_TRUE(is_operation_successful(decompression_result));
 
@@ -128,12 +130,12 @@ TEST_P(EncryptorTest, EncryptManyBlocks)
     // get data
     BYTE* buffer = (BYTE*) malloc(BUFFER_SIZE);
 
-    const size_t READ_BYTES = read_file(buffer, BUFFER_SIZE, FILE_NAME);
-    ASSERT_TRUE(READ_BYTES > 0);
+    const size_t read_bytes = read_file(buffer, BUFFER_SIZE, FILE_NAME);
+    ASSERT_TRUE(read_bytes > 0);
 
     // compress
     BYTE* compressed_buffer = (BYTE*) malloc(BUFFER_SIZE);
-    size_t compression_result = compress_with_blocks(compressed_buffer, BUFFER_SIZE, buffer, READ_BYTES, KEY, 32, IV);
+    size_t compression_result = compress_with_blocks(compressed_buffer, BUFFER_SIZE, buffer, read_bytes, KEY, 32, IV);
 
     ASSERT_TRUE(is_operation_successful(compression_result));
 
@@ -148,11 +150,11 @@ TEST_P(EncryptorTest, EncryptManyBlocks)
     {
         int is_ok;
 
-        ASSERT_EQ(decompression_result, READ_BYTES);
+        ASSERT_EQ(decompression_result, read_bytes);
 
-        if (decompression_result == READ_BYTES)
+        if (decompression_result == read_bytes)
         {
-            int cmp_result = memcmp(buffer, decompress_buffer, READ_BYTES);
+            int cmp_result = memcmp(buffer, decompress_buffer, read_bytes);
             is_ok = (cmp_result == 0);
         }
         else
@@ -176,12 +178,13 @@ TEST_P(EncryptorTest, CustomKey)
     // get data
     BYTE* buffer = (BYTE*) malloc(BUFFER_SIZE);
 
-    const size_t READ_BYTES = read_file(buffer, BUFFER_SIZE, FILE_NAME);
-    ASSERT_TRUE(READ_BYTES > 0);
+    const size_t read_bytes = read_file(buffer, BUFFER_SIZE, FILE_NAME);
+    ASSERT_TRUE(read_bytes > 0);
 
     // compress
     BYTE* compressed_buffer = (BYTE*) malloc(BUFFER_SIZE);
-    size_t compression_result = compress_with_blocks(compressed_buffer, BUFFER_SIZE, buffer, READ_BYTES, CUSTOM_KEY, 6, IV);
+    size_t compression_result = compress_with_blocks(compressed_buffer, BUFFER_SIZE, buffer, read_bytes, CUSTOM_KEY, 6,
+                                                     IV);
 
     ASSERT_TRUE(is_operation_successful(compression_result));
 
@@ -196,11 +199,11 @@ TEST_P(EncryptorTest, CustomKey)
     {
         int is_ok;
 
-        ASSERT_EQ(decompression_result, READ_BYTES);
+        ASSERT_EQ(decompression_result, read_bytes);
 
-        if (decompression_result == READ_BYTES)
+        if (decompression_result == read_bytes)
         {
-            int cmp_result = memcmp(buffer, decompress_buffer, READ_BYTES);
+            int cmp_result = memcmp(buffer, decompress_buffer, read_bytes);
             is_ok = (cmp_result == 0);
         }
         else
@@ -227,7 +230,8 @@ TEST_P(EncryptorTest, WithBlocksNoEncryption)
 
     // compress
     BYTE* compressed_buffer = (BYTE*) malloc(BUFFER_SIZE);
-    size_t compression_result = compress_with_blocks(compressed_buffer, BUFFER_SIZE, buffer, read_bytes, NULL, 0, NULL);
+    size_t compression_result = compress_with_blocks(compressed_buffer, BUFFER_SIZE, buffer, read_bytes, NULL, 0,
+                                                     NULL);
 
     ASSERT_TRUE(is_operation_successful(compression_result));
 
