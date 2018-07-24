@@ -98,19 +98,33 @@ void pre_decompression_shuffle(UnshuffleType *ptr, const size_t SIZE, const unsi
     unsigned char* buffer = (unsigned char*) malloc(BUFFER_SIZE);
     randombytes_buf_deterministic(buffer, BUFFER_SIZE, SEED);
 
+    unsigned char* ptr_copy = (unsigned char*) malloc(SIZE);
+
     size_t i, shuffle;
+
+    for (i = 0; i < SIZE; ++i)
+        ptr_copy[i] = ptr[i].symbol;
 
     for (i = 0; i+SHUFFLE_BLOCK_SIZE <= SIZE; i += SHUFFLE_BLOCK_SIZE)
     {
         shuffle = buffer[i/SHUFFLE_BLOCK_SIZE] % SHUFFLE_BLOCK_SIZE;
-        rotate2(ptr+i, ptr+i+shuffle, ptr+i+SHUFFLE_BLOCK_SIZE);
+
+#ifdef SHUFFLE_64
+        bit_rotate_64((uint64_t *)(ptr_copy + i), (unsigned int) shuffle);
+#else
+        rotate(ptr_copy+i, ptr_copy+i+shuffle, ptr_copy+i+SHUFFLE_BLOCK_SIZE);
+#endif
     }
 
     shuffle = *((size_t*)(buffer + BUFFER_SIZE - sizeof(size_t))) % SIZE;
 
-    rotate2(ptr, ptr+shuffle, ptr+SIZE);
+    rotate(ptr_copy, ptr_copy+shuffle, ptr_copy+SIZE);
+
+    for (i = 0; i < SIZE; ++i)
+        ptr[i].symbol = ptr_copy[i];
 
     free(buffer);
+    free(ptr_copy);
 }
 
 int aes_encrypt(unsigned char *dst, const unsigned char *src, const size_t SRC_SIZE,

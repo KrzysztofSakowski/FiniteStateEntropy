@@ -86,6 +86,8 @@ int decompress_file(const char *in_file_path, const char *out_file_path, const u
     size_t decompressed_data_size = decompress_with_blocks(decompressed_data, decompressed_data_size_serialize,
                                                            compressed_data, in_file_size, KEY, KEY_DATA_SIZE, SALT);
 
+    free(compressed_data);
+
     // save to file
     FILE* out_file = fopen(out_file_path, "wb");
     if (!out_file)
