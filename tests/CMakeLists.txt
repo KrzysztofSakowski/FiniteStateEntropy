@@ -22,6 +22,7 @@ add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR} EXCLUDE_FROM_
 
 set(test_SRCS
         encryption_test.cpp
+        file_encryption_test.cpp
         aes_test.cpp
         helper_test.cpp
         helpers.h

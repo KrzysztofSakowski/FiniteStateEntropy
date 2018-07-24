@@ -29,6 +29,8 @@ set(LIB_SRC
         lib/encryptor.h
         lib/encryptor.c
         lib/encryptor_ctx.h
+        lib/file_encryptor.c
+        lib/file_encryptor.h
         )
 
 set(PROGRAM_SRC
