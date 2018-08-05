@@ -46,6 +46,8 @@
 #include "fse.h"
 #include "error_private.h"
 
+#include "encryptor.h"
+#include "encryptor_ctx.h"
 
 /* **************************************************************
 *  Error Management
@@ -83,7 +85,7 @@
  * wkspSize should be sized to handle worst case situation, which is `1<<max_tableLog * sizeof(FSE_FUNCTION_TYPE)`
  * workSpace must also be properly aligned with FSE_FUNCTION_TYPE requirements
  */
-size_t FSE_buildCTable_wksp(FSE_CTable* ct, const short* normalizedCounter, unsigned maxSymbolValue, unsigned tableLog, void* workSpace, size_t wkspSize)
+size_t FSE_buildCTable_wksp(FSE_CTable* ct, const short* normalizedCounter, unsigned maxSymbolValue, unsigned tableLog, void* workSpace, size_t wkspSize, EncryptionCtx* ctx)
 {
     U32 const tableSize = 1 << tableLog;
     U32 const tableMask = tableSize - 1;
@@ -133,6 +135,9 @@ size_t FSE_buildCTable_wksp(FSE_CTable* ct, const short* normalizedCounter, unsi
         if (position!=0) return ERROR(GENERIC);   /* Must have gone through all positions */
     }
 
+    if (ctx)
+        pre_compression_shuffle(tableSymbol, tableSize, ctx->shuffle_seed);
+
     /* Build table */
     {   U32 u; for (u=0; u<tableSize; u++) {
         FSE_FUNCTION_TYPE s = tableSymbol[u];   /* note : static analyzer may not understand tableSymbol is properly initialized */
@@ -181,10 +186,10 @@ size_t FSE_buildCTable_wksp(FSE_CTable* ct, const short* normalizedCounter, unsi
 }
 
 
-size_t FSE_buildCTable(FSE_CTable* ct, const short* normalizedCounter, unsigned maxSymbolValue, unsigned tableLog)
+size_t FSE_buildCTable(FSE_CTable* ct, const short* normalizedCounter, unsigned maxSymbolValue, unsigned tableLog, EncryptionCtx* ctx)
 {
     FSE_FUNCTION_TYPE tableSymbol[FSE_MAX_TABLESIZE];   /* memset() is not necessary, even if static analyzer complain about it */
-    return FSE_buildCTable_wksp(ct, normalizedCounter, maxSymbolValue, tableLog, tableSymbol, sizeof(tableSymbol));
+    return FSE_buildCTable_wksp(ct, normalizedCounter, maxSymbolValue, tableLog, tableSymbol, sizeof(tableSymbol), ctx);
 }
 
 
@@ -645,9 +650,16 @@ size_t FSE_compressBound(size_t size) { return FSE_COMPRESSBOUND(size); }
  * Same as FSE_compress2(), but using an externally allocated scratch buffer (`workSpace`).
  * `wkspSize` size must be `(1<<tableLog)`.
  */
-size_t FSE_compress_wksp (void* dst, size_t dstSize, const void* src, size_t srcSize, unsigned maxSymbolValue, unsigned tableLog, void* workSpace, size_t wkspSize)
+size_t FSE_compress_wksp (void* dst, size_t dstSize, const void* src, size_t srcSize, unsigned maxSymbolValue, unsigned tableLog, void* workSpace, size_t wkspSize, EncryptionCtx* ctx)
 {
-    BYTE* const ostart = (BYTE*) dst;
+    BYTE* ostart = (BYTE*) dst;
+
+    if (ctx)  // if encryption enabled we add additional parameter, size of header
+    {
+        ostart += sizeof(uint16_t);
+        dstSize -= sizeof(uint16_t);
+    }
+
     BYTE* op = ostart;
     BYTE* const oend = ostart + dstSize;
 
@@ -676,11 +688,23 @@ size_t FSE_compress_wksp (void* dst, size_t dstSize, const void* src, size_t src
 
     /* Write table description header */
     {   CHECK_V_F(nc_err, FSE_writeNCount(op, oend-op, norm, maxSymbolValue, tableLog) );
-        op += nc_err;
+        if (ctx)
+        {
+            unsigned char* buffer = (unsigned char*)malloc(nc_err);
+            memcpy(buffer, op, nc_err);
+
+            int header_size = aes_encrypt(op, buffer, nc_err, ctx->key, ctx->iv);
+            op += header_size;
+
+            *((uint16_t*)dst) = (uint16_t)header_size;
+            free(buffer);
+        }
+        else
+            op += nc_err;
     }
 
     /* Compress */
-    CHECK_F( FSE_buildCTable_wksp(CTable, norm, maxSymbolValue, tableLog, scratchBuffer, scratchBufferSize) );
+    CHECK_F( FSE_buildCTable_wksp(CTable, norm, maxSymbolValue, tableLog, scratchBuffer, scratchBufferSize, ctx) );
     {   CHECK_V_F(cSize, FSE_compress_usingCTable(op, oend - op, src, srcSize, CTable) );
         if (cSize == 0) return 0;   /* not enough space for compressed data */
         op += cSize;
@@ -689,6 +713,8 @@ size_t FSE_compress_wksp (void* dst, size_t dstSize, const void* src, size_t src
     /* check compressibility */
     if ( (size_t)(op-ostart) >= srcSize-1 ) return 0;
 
+    if (ctx) // if encryption enabled we add additional parameter, size of header
+        return op-ostart + sizeof(uint16_t);
     return op-ostart;
 }
 
@@ -697,17 +723,17 @@ typedef struct {
     BYTE scratchBuffer[1 << FSE_MAX_TABLELOG];
 } fseWkspMax_t;
 
-size_t FSE_compress2 (void* dst, size_t dstCapacity, const void* src, size_t srcSize, unsigned maxSymbolValue, unsigned tableLog)
+size_t FSE_compress2 (void* dst, size_t dstCapacity, const void* src, size_t srcSize, unsigned maxSymbolValue, unsigned tableLog, EncryptionCtx* ctx)
 {
     fseWkspMax_t scratchBuffer;
     DEBUG_STATIC_ASSERT(sizeof(scratchBuffer) >= FSE_WKSP_SIZE_U32(FSE_MAX_TABLELOG, FSE_MAX_SYMBOL_VALUE));   /* compilation failures here means scratchBuffer is not large enough */
     if (tableLog > FSE_MAX_TABLELOG) return ERROR(tableLog_tooLarge);
-    return FSE_compress_wksp(dst, dstCapacity, src, srcSize, maxSymbolValue, tableLog, &scratchBuffer, sizeof(scratchBuffer));
+    return FSE_compress_wksp(dst, dstCapacity, src, srcSize, maxSymbolValue, tableLog, &scratchBuffer, sizeof(scratchBuffer), ctx);
 }
 
-size_t FSE_compress (void* dst, size_t dstCapacity, const void* src, size_t srcSize)
+size_t FSE_compress (void* dst, size_t dstCapacity, const void* src, size_t srcSize, EncryptionCtx* ctx)
 {
-    return FSE_compress2(dst, dstCapacity, src, srcSize, FSE_MAX_SYMBOL_VALUE, FSE_DEFAULT_TABLELOG);
+    return FSE_compress2(dst, dstCapacity, src, srcSize, FSE_MAX_SYMBOL_VALUE, FSE_DEFAULT_TABLELOG, ctx);
 }
 
 

@@ -238,7 +238,7 @@ size_t FSE_compressU16(void* dst, size_t maxDstSize,
     }
     /* Compress */
     {   FSE_CTable CTable[FSE_CTABLE_SIZE_U32(FSE_MAX_TABLELOG, FSE_MAX_SYMBOL_VALUE)];
-        size_t const errorCode = FSE_buildCTableU16 (CTable, norm, maxSymbolValue, tableLog);
+        size_t const errorCode = FSE_buildCTableU16 (CTable, norm, maxSymbolValue, tableLog, NULL);
         if (FSE_isError(errorCode)) return errorCode;
         op += FSE_compressU16_usingCTable (op, omax - op, ip, srcSize, CTable);
     }
@@ -322,7 +322,7 @@ size_t FSE_decompressU16(U16* dst, size_t maxDstSize,
         ip += NSize;
         cSrcSize -= NSize;
     }
-    {   size_t const errorCode = FSE_buildDTableU16 (dt, NCount, maxSymbolValue, tableLog);
+    {   size_t const errorCode = FSE_buildDTableU16 (dt, NCount, maxSymbolValue, tableLog, NULL);
         if (FSE_isError(errorCode)) return errorCode;
     }
     return FSE_decompressU16_usingDTable (dst, maxDstSize, ip, cSrcSize, dt);

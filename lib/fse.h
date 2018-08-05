@@ -44,7 +44,7 @@ extern "C" {
 *  Dependencies
 ******************************************/
 #include <stddef.h>    /* size_t, ptrdiff_t */
-
+#include "encryptor_ctx.h"
 
 /*-*****************************************
 *  FSE_PUBLIC_API : control library symbols visibility
@@ -85,7 +85,7 @@ FSE_PUBLIC_API unsigned FSE_versionNumber(void);   /**< library version number; 
                      if FSE_isError(return), compression failed (more details using FSE_getErrorName())
 */
 FSE_PUBLIC_API size_t FSE_compress(void* dst, size_t dstCapacity,
-                             const void* src, size_t srcSize);
+                             const void* src, size_t srcSize, EncryptionCtx* ctx);
 
 /*! FSE_decompress():
     Decompress FSE data from buffer 'cSrc', of size 'cSrcSize',
@@ -98,7 +98,7 @@ FSE_PUBLIC_API size_t FSE_compress(void* dst, size_t dstCapacity,
     Header management is intentionally delegated to the user layer, which can better manage special cases.
 */
 FSE_PUBLIC_API size_t FSE_decompress(void* dst,  size_t dstCapacity,
-                               const void* cSrc, size_t cSrcSize);
+                               const void* cSrc, size_t cSrcSize, EncryptionCtx* ctx);
 
 
 /*-*****************************************
@@ -122,7 +122,7 @@ FSE_PUBLIC_API const char* FSE_getErrorName(size_t code);   /* provides error co
                      if return == 1, srcData is a single byte symbol * srcSize times. Use RLE compression.
                      if FSE_isError(return), it's an error code.
 */
-FSE_PUBLIC_API size_t FSE_compress2 (void* dst, size_t dstSize, const void* src, size_t srcSize, unsigned maxSymbolValue, unsigned tableLog);
+FSE_PUBLIC_API size_t FSE_compress2 (void* dst, size_t dstSize, const void* src, size_t srcSize, unsigned maxSymbolValue, unsigned tableLog, EncryptionCtx* ctx);
 
 
 /*-*****************************************
@@ -184,7 +184,7 @@ FSE_PUBLIC_API void        FSE_freeCTable (FSE_CTable* ct);
 /*! FSE_buildCTable():
     Builds `ct`, which must be already allocated, using FSE_createCTable().
     @return : 0, or an errorCode, which can be tested using FSE_isError() */
-FSE_PUBLIC_API size_t FSE_buildCTable(FSE_CTable* ct, const short* normalizedCounter, unsigned maxSymbolValue, unsigned tableLog);
+FSE_PUBLIC_API size_t FSE_buildCTable(FSE_CTable* ct, const short* normalizedCounter, unsigned maxSymbolValue, unsigned tableLog, EncryptionCtx* ctx);
 
 /*! FSE_compress_usingCTable():
     Compress `src` using `ct` into `dst` which must be already allocated.
@@ -257,7 +257,7 @@ FSE_PUBLIC_API void        FSE_freeDTable(FSE_DTable* dt);
 /*! FSE_buildDTable():
     Builds 'dt', which must be already allocated, using FSE_createDTable().
     return : 0, or an errorCode, which can be tested using FSE_isError() */
-FSE_PUBLIC_API size_t FSE_buildDTable (FSE_DTable* dt, const short* normalizedCounter, unsigned maxSymbolValue, unsigned tableLog);
+FSE_PUBLIC_API size_t FSE_buildDTable (FSE_DTable* dt, const short* normalizedCounter, unsigned maxSymbolValue, unsigned tableLog, EncryptionCtx* ctx);
 
 /*! FSE_decompress_usingDTable():
     Decompress compressed source `cSrc` of size `cSrcSize` using `dt`
@@ -332,7 +332,7 @@ unsigned FSE_optimalTableLog_internal(unsigned maxTableLog, size_t srcSize, unsi
  * FSE_WKSP_SIZE_U32() provides the minimum size required for `workSpace` as a table of FSE_CTable.
  */
 #define FSE_WKSP_SIZE_U32(maxTableLog, maxSymbolValue)   ( FSE_CTABLE_SIZE_U32(maxTableLog, maxSymbolValue) + ((maxTableLog > 12) ? (1 << (maxTableLog - 2)) : 1024) )
-size_t FSE_compress_wksp (void* dst, size_t dstSize, const void* src, size_t srcSize, unsigned maxSymbolValue, unsigned tableLog, void* workSpace, size_t wkspSize);
+size_t FSE_compress_wksp (void* dst, size_t dstSize, const void* src, size_t srcSize, unsigned maxSymbolValue, unsigned tableLog, void* workSpace, size_t wkspSize, EncryptionCtx* ctx);
 
 size_t FSE_buildCTable_raw (FSE_CTable* ct, unsigned nbBits);
 /**< build a fake FSE_CTable, designed for a flat distribution, where each symbol uses nbBits */
@@ -344,7 +344,7 @@ size_t FSE_buildCTable_rle (FSE_CTable* ct, unsigned char symbolValue);
  * Same as FSE_buildCTable(), but using an externally allocated scratch buffer (`workSpace`).
  * `wkspSize` must be >= `(1<<tableLog)`.
  */
-size_t FSE_buildCTable_wksp(FSE_CTable* ct, const short* normalizedCounter, unsigned maxSymbolValue, unsigned tableLog, void* workSpace, size_t wkspSize);
+size_t FSE_buildCTable_wksp(FSE_CTable* ct, const short* normalizedCounter, unsigned maxSymbolValue, unsigned tableLog, void* workSpace, size_t wkspSize, EncryptionCtx* ctc);
 
 size_t FSE_buildDTable_raw (FSE_DTable* dt, unsigned nbBits);
 /**< build a fake FSE_DTable, designed to read a flat distribution where each symbol uses nbBits */
@@ -352,7 +352,7 @@ size_t FSE_buildDTable_raw (FSE_DTable* dt, unsigned nbBits);
 size_t FSE_buildDTable_rle (FSE_DTable* dt, unsigned char symbolValue);
 /**< build a fake FSE_DTable, designed to always generate the same symbolValue */
 
-size_t FSE_decompress_wksp(void* dst, size_t dstCapacity, const void* cSrc, size_t cSrcSize, FSE_DTable* workSpace, unsigned maxLog);
+size_t FSE_decompress_wksp(void* dst, size_t dstCapacity, const void* cSrc, size_t cSrcSize, FSE_DTable* workSpace, unsigned maxLog, EncryptionCtx* ctx);
 /**< same as FSE_decompress(), using an externally allocated `workSpace` produced with `FSE_DTABLE_SIZE_U32(maxLog)` */
 
 typedef enum {

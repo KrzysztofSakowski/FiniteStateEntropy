@@ -501,7 +501,7 @@ static int local_FSE_countFast254(void* dst, size_t dstSize, const void* src, si
 
 static int local_FSE_compress(void* dst, size_t dstSize, const void* src, size_t srcSize)
 {
-    return (int)FSE_compress(dst, dstSize, src, srcSize);
+    return (int)FSE_compress(dst, dstSize, src, srcSize, NULL);
 }
 
 static int local_HUF_compress(void* dst, size_t dstSize, const void* src, size_t srcSize)
@@ -581,7 +581,7 @@ static int local_FSE_writeHeader_small(void* dst, size_t dstSize, const void* sr
 static int local_FSE_buildCTable(void* dst, size_t dstSize, const void* src, size_t srcSize)
 {
     (void)dst; (void)dstSize; (void)src; (void)srcSize;
-    return (int)FSE_buildCTable(g_CTable, g_normTable, g_max, g_tableLog);
+    return (int)FSE_buildCTable(g_CTable, g_normTable, g_max, g_tableLog, NULL);
 }
 
 static int local_FSE_buildCTable_raw(void* dst, size_t dstSize, const void* src, size_t srcSize)
@@ -611,7 +611,7 @@ static int local_FSE_readNCount(void* src, size_t srcSize, const void* initialBu
 static int local_FSE_buildDTable(void* dst, size_t dstSize, const void* src, size_t srcSize)
 {
     (void)dst; (void)dstSize; (void)src; (void)srcSize;
-    return (int)FSE_buildDTable(g_DTable, g_normTable, g_max, g_tableLog);
+    return (int)FSE_buildDTable(g_DTable, g_normTable, g_max, g_tableLog, NULL);
 }
 
 static int local_FSE_buildDTable_raw(void* dst, size_t dstSize, const void* src, size_t srcSize)
@@ -629,7 +629,7 @@ static int local_FSE_decompress_usingDTable(void* dst, size_t maxDstSize, const 
 static int local_FSE_decompress(void* dst, size_t maxDstSize, const void* src, size_t srcSize)
 {
     (void)srcSize;
-    return (int)FSE_decompress(dst, maxDstSize, src, g_cSize);
+    return (int)FSE_decompress(dst, maxDstSize, src, g_cSize, NULL);
 }
 
 
@@ -799,7 +799,7 @@ int runBench(const void* buffer, size_t blockSize, U32 algNb, U32 nbBenchs)
             U32 max=255;
             HIST_count(g_countTable, &max, (const unsigned char*)oBuffer, benchedSize);
             g_tableLog = (U32)FSE_normalizeCount(g_normTable, g_tableLog, g_countTable, benchedSize, max);
-            FSE_buildCTable(g_CTable, g_normTable, max, g_tableLog);
+            FSE_buildCTable(g_CTable, g_normTable, max, g_tableLog, NULL);
             funcName = "FSE_compress_usingCTable";
             func = local_FSE_compress_usingCTable;
             break;
@@ -810,7 +810,7 @@ int runBench(const void* buffer, size_t blockSize, U32 algNb, U32 nbBenchs)
             U32 max=255;
             HIST_count(g_countTable, &max, (const unsigned char*)oBuffer, benchedSize);
             g_tableLog = (U32)FSE_normalizeCount(g_normTable, g_tableLog, g_countTable, benchedSize, max);
-            FSE_buildCTable(g_CTable, g_normTable, max, g_tableLog);
+            FSE_buildCTable(g_CTable, g_normTable, max, g_tableLog, NULL);
             funcName = "FSE_compress_usingCTable_smallDst";
             func = local_FSE_compress_usingCTable_tooSmall;
             break;
@@ -823,7 +823,7 @@ int runBench(const void* buffer, size_t blockSize, U32 algNb, U32 nbBenchs)
 
     case 11:
         {
-            FSE_compress(cBuffer, cBuffSize, oBuffer, benchedSize);
+            FSE_compress(cBuffer, cBuffSize, oBuffer, benchedSize, NULL);
             g_max = 255;
             funcName = "FSE_readNCount";
             func = local_FSE_readNCount;
@@ -832,7 +832,7 @@ int runBench(const void* buffer, size_t blockSize, U32 algNb, U32 nbBenchs)
 
     case 12:
         {
-            FSE_compress(cBuffer, cBuffSize, oBuffer, benchedSize);
+            FSE_compress(cBuffer, cBuffSize, oBuffer, benchedSize, NULL);
             g_max = 255;
             FSE_readNCount(g_normTable, &g_max, &g_tableLog, cBuffer, benchedSize);
             funcName = "FSE_buildDTable";
@@ -842,12 +842,12 @@ int runBench(const void* buffer, size_t blockSize, U32 algNb, U32 nbBenchs)
 
     case 13:
         {
-            g_cSize = FSE_compress(cBuffer, cBuffSize, oBuffer, benchedSize);
+            g_cSize = FSE_compress(cBuffer, cBuffSize, oBuffer, benchedSize, NULL);
             memcpy(oBuffer, cBuffer, g_cSize);
             g_max = 255;
             g_skip = FSE_readNCount(g_normTable, &g_max, &g_tableLog, oBuffer, g_cSize);
             g_cSize -= g_skip;
-            FSE_buildDTable (g_DTable, g_normTable, g_max, g_tableLog);
+            FSE_buildDTable (g_DTable, g_normTable, g_max, g_tableLog, NULL);
             funcName = "FSE_decompress_usingDTable";
             func = local_FSE_decompress_usingDTable;
             break;
@@ -855,7 +855,7 @@ int runBench(const void* buffer, size_t blockSize, U32 algNb, U32 nbBenchs)
 
     case 14:
         {
-            g_cSize = FSE_compress(cBuffer, cBuffSize, oBuffer, benchedSize);
+            g_cSize = FSE_compress(cBuffer, cBuffSize, oBuffer, benchedSize, NULL);
             memcpy(oBuffer, cBuffer, g_cSize);
             funcName = "FSE_decompress";
             func = local_FSE_decompress;
