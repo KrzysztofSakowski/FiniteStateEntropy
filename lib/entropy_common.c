@@ -1,6 +1,6 @@
 /*
-   Common functions of New Generation Entropy library
-   Copyright (C) 2016, Yann Collet.
+   Common functions for Finite State Entropy project
+   Copyright (C) 2016-present, Yann Collet.
 
    BSD 2-Clause License (http://www.opensource.org/licenses/bsd-license.php)
 
@@ -43,30 +43,19 @@
 #include "huf.h"
 
 
-/*-****************************************
-*  Version
-******************************************/
+/*===   Version   ===*/
 unsigned FSE_versionNumber(void) { return FSE_VERSION_NUMBER; }
 
 
-/*-****************************************
-*  FSE Error Management
-******************************************/
+/*===   Error Management   ===*/
 unsigned FSE_isError(size_t code) { return ERR_isError(code); }
-
 const char* FSE_getErrorName(size_t code) { return ERR_getErrorName(code); }
 
-
-/* **************************************************************
-*  HUF Error Management
-****************************************************************/
 unsigned HUF_isError(size_t code) { return ERR_isError(code); }
-
 const char* HUF_getErrorName(size_t code) { return ERR_getErrorName(code); }
 
-
 /*-**************************************************************
-*  FSE NCount encoding-decoding
+*  FSE NCount decoding
 ****************************************************************/
 size_t FSE_readNCount (short* normalizedCounter, unsigned* maxSVPtr, unsigned* tableLogPtr,
                  const void* headerBuffer, size_t hbSize)
@@ -82,7 +71,21 @@ size_t FSE_readNCount (short* normalizedCounter, unsigned* maxSVPtr, unsigned* t
     unsigned charnum = 0;
     int previous0 = 0;
 
-    if (hbSize < 4) return ERROR(srcSize_wrong);
+    DEBUGLOG(5, "FSE_readNCount");
+
+    if (hbSize < 4) {
+        /* This function only works when hbSize >= 4 */
+        char buffer[4];
+        memset(buffer, 0, sizeof(buffer));
+        memcpy(buffer, headerBuffer, hbSize);
+        {   size_t const countSize = FSE_readNCount(normalizedCounter, maxSVPtr, tableLogPtr,
+                                                    buffer, sizeof(buffer));
+            if (FSE_isError(countSize)) return countSize;
+            if (countSize > hbSize) return ERROR(corruption_detected);
+            return countSize;
+    }   }
+    assert(hbSize >= 4);
+
     bitStream = MEM_readLE32(ip);
     nbBits = (bitStream & 0xF) + FSE_MIN_TABLELOG;   /* extract tableLog */
     if (nbBits > FSE_TABLELOG_ABSOLUTE_MAX) return ERROR(tableLog_tooLarge);
@@ -115,6 +118,7 @@ size_t FSE_readNCount (short* normalizedCounter, unsigned* maxSVPtr, unsigned* t
             if (n0 > *maxSVPtr) return ERROR(maxSymbolValue_tooSmall);
             while (charnum < n0) normalizedCounter[charnum++] = 0;
             if ((ip <= iend-7) || (ip + (bitCount>>3) <= iend-4)) {
+                assert((bitCount >> 3) <= 3); /* For first condition to work */
                 ip += bitCount>>3;
                 bitCount &= 7;
                 bitStream = MEM_readLE32(ip) >> bitCount;
@@ -153,6 +157,11 @@ size_t FSE_readNCount (short* normalizedCounter, unsigned* maxSVPtr, unsigned* t
     }   }   /* while ((remaining>1) & (charnum<=*maxSVPtr)) */
     if (remaining != 1) return ERROR(corruption_detected);
     if (bitCount > 32) return ERROR(corruption_detected);
+    /* zeroise the rest */
+    {   unsigned symbNb = charnum;
+        for (symbNb=charnum; symbNb <= *maxSVPtr; symbNb++)
+            normalizedCounter[symbNb] = 0;
+    }
     *maxSVPtr = charnum-1;
 
     ip += (bitCount+7)>>3;

@@ -51,7 +51,7 @@
 *  Error Management
 ****************************************************************/
 #define FSE_isError ERR_isError
-#define FSE_STATIC_ASSERT(c) { enum { FSE_static_assert = 1/(int)(!!(c)) }; }   /* use only *after* variable declarations */
+#define FSE_STATIC_ASSERT(c) DEBUG_STATIC_ASSERT(c)   /* use only *after* variable declarations */
 
 /* check and forward error code */
 #define CHECK_F(f) { size_t const e = f; if (FSE_isError(e)) return e; }
@@ -175,6 +175,7 @@ size_t FSE_buildDTable_rle (FSE_DTable* dt, BYTE symbolValue)
     return 0;
 }
 
+
 size_t FSE_buildDTable_raw (FSE_DTable* dt, unsigned nbBits)
 {
     void* ptr = dt;
@@ -201,9 +202,7 @@ size_t FSE_buildDTable_raw (FSE_DTable* dt, unsigned nbBits)
     return 0;
 }
 
-
-FORCE_INLINE_TEMPLATE size_t
-FSE_decompress_usingDTable_generic(
+FORCE_INLINE_TEMPLATE size_t FSE_decompress_usingDTable_generic(
           void* dst, size_t maxDstSize,
     const void* cSrc, size_t cSrcSize,
     const FSE_DTable* dt, const unsigned fast)
@@ -223,7 +222,7 @@ FSE_decompress_usingDTable_generic(
     FSE_initDState(&state1, &bitD, dt);
     FSE_initDState(&state2, &bitD, dt);
 
-#define FSE_GETSYMBOL(statePtr) (fast ? FSE_decodeSymbolFast(statePtr, &bitD) : FSE_decodeSymbol(statePtr, &bitD))
+#define FSE_GETSYMBOL(statePtr) fast ? FSE_decodeSymbolFast(statePtr, &bitD) : FSE_decodeSymbol(statePtr, &bitD)
 
     /* 4 symbols per loop */
     for ( ; (BIT_reloadDStream(&bitD)==BIT_DStream_unfinished) & (op<olimit) ; op+=4) {

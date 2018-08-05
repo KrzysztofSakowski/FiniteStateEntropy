@@ -39,6 +39,7 @@ You can contact the author at :
 #include <string.h>     /* memset */
 #include <sys/timeb.h>  /* timeb */
 #include "mem.h"
+#include "hist.h"
 #define FSE_STATIC_LINKING_ONLY
 #include "fse.h"
 #include "xxhash.h"
@@ -306,28 +307,26 @@ static void unitTest(void)
         return;
     }
 
-    /* FSE_count */
-    {
-        U32 max, i;
+    /* HIST_count */
+    {   U32 max, i;
         for (i=0; i< TBSIZE; i++) testBuff[i] = (FUZ_rand(&lseed) & 63) + '0';
         max = '0' + 63;
-        errorCode = FSE_count(count, &max, testBuff, TBSIZE);
+        errorCode = HIST_count(count, &max, testBuff, TBSIZE);
         CHECK(FSE_isError(errorCode), "Error : FSE_count() should have worked");
         max -= 1;
-        errorCode = FSE_count(count, &max, testBuff, TBSIZE);
+        errorCode = HIST_count(count, &max, testBuff, TBSIZE);
         CHECK(!FSE_isError(errorCode), "Error : FSE_count() should have failed : value > max");
         max = 65000;
-        errorCode = FSE_count(count, &max, testBuff, TBSIZE);
+        errorCode = HIST_count(count, &max, testBuff, TBSIZE);
         CHECK(FSE_isError(errorCode), "Error : FSE_count() should have worked");
     }
 
     /* FSE_optimalTableLog */
-    {
-        U32 max, i, tableLog=12;
+    {   U32 max, i, tableLog=12;
         size_t testSize = 999;
         for (i=0; i< testSize; i++) testBuff[i] = (BYTE)FUZ_rand(&lseed);
         max = 256;
-        FSE_count(count, &max, testBuff, testSize);
+        HIST_count(count, &max, testBuff, testSize);
         tableLog = FSE_optimalTableLog(tableLog, testSize, max);
         CHECK(tableLog<=8, "Too small tableLog");
     }
@@ -336,7 +335,7 @@ static void unitTest(void)
     {
         S16 norm[256];
         U32 max = 256;
-        FSE_count(count, &max, testBuff, TBSIZE);
+        HIST_count(count, &max, testBuff, TBSIZE);
         errorCode = FSE_normalizeCount(norm, 10, count, TBSIZE, max);
         CHECK(FSE_isError(errorCode), "Error : FSE_normalizeCount() should have worked");
         errorCode = FSE_normalizeCount(norm, 8, count, TBSIZE, 256);
@@ -384,7 +383,7 @@ static void unitTest(void)
 
         for (i=0; i< TBSIZE; i++) testBuff[i] = i % 127;
         max = 128;
-        errorCode = FSE_count(count, &max, testBuff, TBSIZE);
+        errorCode = HIST_count(count, &max, testBuff, TBSIZE);
         CHECK(FSE_isError(errorCode), "Error : FSE_count() should have worked");
         tableLog = FSE_optimalTableLog(0, TBSIZE, max);
         errorCode = FSE_normalizeCount(norm, tableLog, count, TBSIZE, max);
@@ -404,15 +403,16 @@ static void unitTest(void)
         errorCode = FSE_writeNCount(header, headerSize+1, norm, max, tableLog);
         CHECK(FSE_isError(errorCode), "Error : FSE_writeNCount() should have worked");
 
-        max = 129;
-        errorCode = FSE_readNCount(norm, &max, &tableLog, header, headerSize);
-        CHECK(FSE_isError(errorCode), "Error : FSE_readNCount() should have worked : (error %s)", FSE_getErrorName(errorCode));
+        {   unsigned maxN = 128;
+            size_t const err = FSE_readNCount(norm, &maxN, &tableLog, header, headerSize);
+            CHECK(FSE_isError(err), "Error : FSE_readNCount() should have worked : (error %s)", FSE_getErrorName(err));
+        }
 
         max = 64;
         errorCode = FSE_readNCount(norm, &max, &tableLog, header, headerSize);
         CHECK(!FSE_isError(errorCode), "Error : FSE_readNCount() should have failed (max too small)");
 
-        max = 129;
+        max = 128;
         errorCode = FSE_readNCount(norm, &max, &tableLog, header, headerSize-1);
         CHECK(!FSE_isError(errorCode), "Error : FSE_readNCount() should have failed (size too small)");
 
