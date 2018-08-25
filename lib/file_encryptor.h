@@ -8,7 +8,7 @@ extern "C" {
 #endif
 
 int compress_file(const char *in_file_path, const char *out_file_path, const unsigned char *KEY, size_t KEY_DATA_SIZE,
-                  const unsigned char *SALT);
+                  const unsigned char *SALT, uint32_t BLOCK_SIZE);
 
 int decompress_file(const char *in_file_path, const char *out_file_path, const unsigned char *KEY,
                     size_t KEY_DATA_SIZE, const unsigned char *SALT);
