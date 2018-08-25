@@ -14,6 +14,7 @@ public:
     static const char* FILE_70;
     static const char* FILE_30;
     static const size_t BUFFER_SIZE = 2'000'000; // 2MB
+    static const size_t BLOCK_SIZE = 30'000; // with current implementation max is 2^32 / 2 = 2^31
 
 protected:
     const unsigned char KEY[32] = {
@@ -135,7 +136,7 @@ TEST_P(EncryptorTest, EncryptManyBlocks)
 
     // compress
     BYTE* compressed_buffer = (BYTE*) malloc(BUFFER_SIZE);
-    size_t compression_result = compress_with_blocks(compressed_buffer, BUFFER_SIZE, buffer, read_bytes, KEY, 32, IV);
+    size_t compression_result = compress_with_blocks(compressed_buffer, BUFFER_SIZE, buffer, read_bytes, KEY, 32, IV, BLOCK_SIZE);
 
     ASSERT_TRUE(is_operation_successful(compression_result));
 
@@ -184,7 +185,7 @@ TEST_P(EncryptorTest, CustomKey)
     // compress
     BYTE* compressed_buffer = (BYTE*) malloc(BUFFER_SIZE);
     size_t compression_result = compress_with_blocks(compressed_buffer, BUFFER_SIZE, buffer, read_bytes, CUSTOM_KEY, 6,
-                                                     IV);
+                                                     IV, BLOCK_SIZE);
 
     ASSERT_TRUE(is_operation_successful(compression_result));
 
@@ -231,7 +232,7 @@ TEST_P(EncryptorTest, WithBlocksNoEncryption)
     // compress
     BYTE* compressed_buffer = (BYTE*) malloc(BUFFER_SIZE);
     size_t compression_result = compress_with_blocks(compressed_buffer, BUFFER_SIZE, buffer, read_bytes, NULL, 0,
-                                                     NULL);
+                                                     NULL, BLOCK_SIZE);
 
     ASSERT_TRUE(is_operation_successful(compression_result));
 

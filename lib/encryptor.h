@@ -39,7 +39,7 @@ int calc_seed(const unsigned char *key_data, size_t KEY_SIZE,
 int is_operation_successful(size_t result);
 
 size_t compress_with_blocks(void *dst, size_t dstCapacity, const void *src, size_t srcSize, const unsigned char *KEY,
-                            size_t KEY_DATA_SIZE, const unsigned char *SALT);
+                            size_t KEY_DATA_SIZE, const unsigned char *SALT, uint32_t BLOCK_SIZE);
 
 size_t decompress_with_blocks(void *dst, size_t dstCapacity, const void *src, size_t srcSize, const unsigned char *KEY,
                               size_t KEY_DATA_SIZE, const unsigned char *SALT);

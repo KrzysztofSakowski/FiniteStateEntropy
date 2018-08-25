@@ -12,7 +12,7 @@ long fileSize(FILE *fp)
 }
 
 int compress_file(const char *in_file_path, const char *out_file_path, const unsigned char *KEY, size_t KEY_DATA_SIZE,
-                  const unsigned char *SALT)
+                  const unsigned char *SALT, const uint32_t BLOCK_SIZE)
 {
     FILE* in_file = fopen(in_file_path, "rb");
     if (!in_file)
@@ -33,7 +33,7 @@ int compress_file(const char *in_file_path, const char *out_file_path, const uns
     BYTE* compressed_data = (BYTE*) malloc(in_file_size);
 
     size_t compressed_data_size = compress_with_blocks(compressed_data, in_file_size, buffer, read_bytes, KEY,
-                                                       KEY_DATA_SIZE, SALT);
+                                                       KEY_DATA_SIZE, SALT, BLOCK_SIZE);
 
     free(buffer);
 

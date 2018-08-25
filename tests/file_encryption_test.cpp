@@ -10,6 +10,7 @@ public:
     static const char *FILE_70;
     static const char *FILE_30;
     static const size_t BUFFER_SIZE = 2'000'000; // 2MB
+    static const size_t BLOCK_SIZE = 50'000; // with current implementation max is 2^32 / 2 = 2^31
     static constexpr unsigned char IV[16] =
     {
             1, 6, 3, 4, 7, 6, 7, 8, 1, 3, 5, 4, 5, 6, 7, 8
@@ -28,7 +29,7 @@ TEST_P(FileEncryptorTest, WithoutEncryption)
     const char *COMPRESSED_FILE = "compressed.bin";
     const char *OUT_FILE = "out.bin";
 
-    compress_file(IN_FILE, COMPRESSED_FILE, NULL, 0, NULL);
+    compress_file(IN_FILE, COMPRESSED_FILE, NULL, 0, NULL, BLOCK_SIZE);
 
     decompress_file(COMPRESSED_FILE, OUT_FILE, NULL, 0, NULL);
 
@@ -56,7 +57,7 @@ TEST_P(FileEncryptorTest, WithEncryption)
     const char *OUT_FILE = "out.bin";
     const unsigned char CUSTOM_KEY[] = {43, 2, 34, 0, 40, 255, 77};
 
-    compress_file(IN_FILE, COMPRESSED_FILE, CUSTOM_KEY, 7, IV);
+    compress_file(IN_FILE, COMPRESSED_FILE, CUSTOM_KEY, 7, IV, BLOCK_SIZE);
 
     decompress_file(COMPRESSED_FILE, OUT_FILE, CUSTOM_KEY, 7, IV);
 

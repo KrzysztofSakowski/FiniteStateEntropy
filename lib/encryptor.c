@@ -2,7 +2,6 @@
 
 #include <openssl/evp.h>
 #include <openssl/rand.h>
-#include <openssl/aes.h>
 #include <openssl/sha.h>
 
 #include <sodium.h>
@@ -18,7 +17,6 @@
 #endif
 
 static const size_t SHUFFLE_BLOCK_SIZE = 8;
-static const size_t BLOCK_SIZE = 30000; // with current implementation max is 2^16  / 2 = 2^15
 
 // https://stackoverflow.com/questions/776508/best-practices-for-circular-shift-rotate-operations-in-c
 void bit_rotate_64(uint64_t *n, unsigned int c)
@@ -238,13 +236,14 @@ size_t compression_helper(void* dst, size_t dstCapacity, const void* src, size_t
 }
 
 size_t compress_with_blocks(void *dst, size_t dstCapacity, const void *src, size_t srcSize, const unsigned char *KEY,
-                            size_t KEY_DATA_SIZE, const unsigned char *SALT)
+                            size_t KEY_DATA_SIZE, const unsigned char *SALT, const uint32_t BLOCK_SIZE)
 {
     const int USE_ENCRYPTION = KEY != NULL && KEY_DATA_SIZE > 0 && SALT != NULL;
     const uint32_t block_count = (uint32_t)(srcSize / BLOCK_SIZE);
 
     size_t src_offset = 0;
-    size_t dst_offset = sizeof(uint32_t) + block_count * sizeof(uint16_t);
+    // block count + block_count * nth_block_size
+    size_t dst_offset = sizeof(uint32_t) + block_count * sizeof(uint32_t);
 
     ((uint32_t*)dst)[0] = block_count;
     uint32_t block_id;
@@ -264,14 +263,14 @@ size_t compress_with_blocks(void *dst, size_t dstCapacity, const void *src, size
         if (!is_operation_successful(compression_result))
             return compression_result;
 
-        // +2 is compensation for block_count which size is 2*uint16_t
-        ((uint16_t*)dst)[block_id+2] = (uint16_t)compression_result;
+        // +1 is compensation for block_count which size is uint32_t
+        ((uint32_t*)dst)[block_id+1] = (uint32_t)compression_result;
 
         src_offset += BLOCK_SIZE;
         dst_offset += compression_result;
     }
 
-    {
+    { // special treatment for the last block
         size_t compression_result;
 
         if (USE_ENCRYPTION)
@@ -284,8 +283,8 @@ size_t compress_with_blocks(void *dst, size_t dstCapacity, const void *src, size
         if (!is_operation_successful(compression_result))
             return compression_result;
 
-        // +2 is compensation for block_count which size is 2*uint16_t
-        ((uint16_t*)dst)[2+block_id] = (uint16_t)compression_result;
+        // +1 is compensation for block_count which size is uint32_t
+        ((uint32_t*)dst)[block_id+1] = (uint32_t)compression_result;
 
         dst_offset += compression_result;
     }
@@ -314,14 +313,15 @@ size_t decompress_with_blocks(void *dst, size_t dstCapacity, const void *src, si
 
     const uint32_t block_count = ((uint32_t*)src)[0];
 
-    size_t src_offset = sizeof(uint32_t) + block_count * sizeof(uint16_t);
+    // block count + block_count * nth_block_size
+    size_t src_offset = sizeof(uint32_t) + block_count * sizeof(uint32_t);
     size_t dst_offset = 0;
     uint32_t block_id;
 
     for (block_id = 0; block_id+1 < block_count; ++block_id)
     {
-        // +2 is compensation for block_count which size is 2*uint16_t
-        uint16_t current_block_size = ((uint16_t*)src)[block_id+2];
+        // +1 is compensation for block_count which size is uint32_t
+        uint32_t current_block_size = ((uint32_t*)src)[block_id+1];
 
         size_t decompression_result;
 
@@ -340,9 +340,9 @@ size_t decompress_with_blocks(void *dst, size_t dstCapacity, const void *src, si
         dst_offset += decompression_result;
     }
 
-    {
-        // +2 is compensation for block_count which size is 2*uint16_t
-        uint16_t current_block_size = ((uint16_t*)src)[2+block_id];
+    { // special treatment for the last block
+        // +1 is compensation for block_count which size is uint32_t
+        uint32_t current_block_size = ((uint32_t*)src)[1+block_id];
 
         size_t decompression_result;
 
