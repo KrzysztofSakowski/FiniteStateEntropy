@@ -13,6 +13,7 @@ class EncryptorTest : public ::testing::TestWithParam<const char*> {
 public:
     static const char* FILE_70;
     static const char* FILE_30;
+    static const char* FILE_01;
     static const size_t BUFFER_SIZE = 2'000'000; // 2MB
     static const size_t BLOCK_SIZE = 30'000; // with current implementation max is 2^32 / 2 = 2^31
 
@@ -28,9 +29,14 @@ protected:
 
 const char* EncryptorTest::FILE_70 = "proba_70.bin";
 const char* EncryptorTest::FILE_30 = "proba_30.bin";
+const char* EncryptorTest::FILE_01 = "proba_01.bin";
 
 INSTANTIATE_TEST_CASE_P(DifferentBinaryFiles, EncryptorTest,
-                        ::testing::ValuesIn({EncryptorTest::FILE_70, EncryptorTest::FILE_30}));
+                        ::testing::ValuesIn({
+                            EncryptorTest::FILE_70,
+                            EncryptorTest::FILE_30,
+                            EncryptorTest::FILE_01
+                            }));
 
 TEST_P(EncryptorTest, EncryptSingleBlockNull)
 {

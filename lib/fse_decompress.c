@@ -280,9 +280,10 @@ size_t FSE_decompress_usingDTable(void* dst, size_t originalSize,
 
 size_t FSE_decompress_wksp(void* dst, size_t dstCapacity, const void* cSrc, size_t cSrcSize, FSE_DTable* workSpace, unsigned maxLog, EncryptionCtx* ctx)
 {
-    const BYTE *istart = (const BYTE *) cSrc;
+    BYTE *istart = (BYTE *) cSrc;
 
-    if (ctx) {
+    if (ctx)
+    {
         istart += sizeof(uint16_t);
         cSrcSize -= sizeof(uint16_t);
     }
@@ -292,36 +293,24 @@ size_t FSE_decompress_wksp(void* dst, size_t dstCapacity, const void* cSrc, size
     unsigned tableLog;
     unsigned maxSymbolValue = FSE_MAX_SYMBOL_VALUE;
 
-    size_t NCountLength;
-    uint16_t header_size;
-
     if  (ctx)
     {
-        header_size =  *((uint16_t*)cSrc);
-        unsigned char* buffer = malloc(header_size);
-        aes_decrypt(buffer, istart, header_size, ctx->key, ctx->iv);
-
-        NCountLength = FSE_readNCount (counting, &maxSymbolValue, &tableLog, buffer, header_size);
-
+        uint16_t encryptSize = *((uint16_t*)cSrc);
+        unsigned char* buffer = (unsigned char*)malloc(encryptSize);
+        memcpy(buffer, istart, encryptSize);
+        aes_decrypt(istart, buffer, encryptSize, ctx->key, ctx->iv);
         free(buffer);
     }
-    else
-        /* normal FSE decoding mode */
-        NCountLength = FSE_readNCount (counting, &maxSymbolValue, &tableLog, istart, cSrcSize);
+
+    /* normal FSE decoding mode */
+    size_t NCountLength = FSE_readNCount (counting, &maxSymbolValue, &tableLog, istart, cSrcSize);
 
     if (FSE_isError(NCountLength)) return NCountLength;
     //if (NCountLength >= cSrcSize) return ERROR(srcSize_wrong);   /* too small input size; supposed to be already checked in NCountLength, only remaining case : NCountLength==cSrcSize */
     if (tableLog > maxLog) return ERROR(tableLog_tooLarge);
-    if (ctx)
-    {
-        ip += header_size;
-        cSrcSize -= header_size;
-    }
-    else
-    {
-        ip += NCountLength;
-        cSrcSize -= NCountLength;
-    }
+
+    ip += NCountLength;
+    cSrcSize -= NCountLength;
 
     CHECK_F( FSE_buildDTable (workSpace, counting, maxSymbolValue, tableLog, ctx) );
 

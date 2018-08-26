@@ -654,11 +654,13 @@ size_t FSE_compress_wksp (void* dst, size_t dstSize, const void* src, size_t src
 {
     BYTE* ostart = (BYTE*) dst;
 
-    if (ctx)  // if encryption enabled we add additional parameter, size of header
+    if (ctx)  // if encryption enabled we add additional parameter, size of encryption data
     {
         ostart += sizeof(uint16_t);
         dstSize -= sizeof(uint16_t);
     }
+    BYTE* headerStart;
+    U16 headerSize;
 
     BYTE* op = ostart;
     BYTE* const oend = ostart + dstSize;
@@ -690,17 +692,10 @@ size_t FSE_compress_wksp (void* dst, size_t dstSize, const void* src, size_t src
     {   CHECK_V_F(nc_err, FSE_writeNCount(op, oend-op, norm, maxSymbolValue, tableLog) );
         if (ctx)
         {
-            unsigned char* buffer = (unsigned char*)malloc(nc_err);
-            memcpy(buffer, op, nc_err);
-
-            int header_size = aes_encrypt(op, buffer, nc_err, ctx->key, ctx->iv);
-            op += header_size;
-
-            *((uint16_t*)dst) = (uint16_t)header_size;
-            free(buffer);
+            headerStart = op;
+            headerSize = (U16)nc_err;
         }
-        else
-            op += nc_err;
+        op += nc_err;
     }
 
     /* Compress */
@@ -713,8 +708,25 @@ size_t FSE_compress_wksp (void* dst, size_t dstSize, const void* src, size_t src
     /* check compressibility */
     if ( (size_t)(op-ostart) >= srcSize-1 ) return 0;
 
-    if (ctx) // if encryption enabled we add additional parameter, size of header
+    if (ctx) // if encryption enabled we add additional parameter, size of encryption data
+    {
+        const size_t AES_BLOCK_SIZE = 16;
+        size_t encryptSize;
+        if (headerSize % AES_BLOCK_SIZE != 0)
+            encryptSize = (headerSize / AES_BLOCK_SIZE) * AES_BLOCK_SIZE + AES_BLOCK_SIZE;
+        else
+            encryptSize = headerSize;
+
+        unsigned char* buffer = (unsigned char*)malloc(encryptSize);
+        memcpy(buffer, headerStart, encryptSize);
+
+        int encryptedSize = aes_encrypt(headerStart, buffer, encryptSize, ctx->key, ctx->iv);
+
+        *((uint16_t*)dst) = (uint16_t)encryptedSize;
+        free(buffer);
+
         return op-ostart + sizeof(uint16_t);
+    }
     return op-ostart;
 }
 

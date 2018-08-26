@@ -132,6 +132,7 @@ int aes_encrypt(unsigned char *dst, const unsigned char *src, const size_t SRC_S
     en = EVP_CIPHER_CTX_new();
     EVP_CIPHER_CTX_init(en);
     EVP_EncryptInit_ex(en, EVP_aes_256_cbc(), NULL, key, iv);
+    EVP_CIPHER_CTX_set_padding(en, 0);
 
     int update_len, final_len;
 
@@ -153,6 +154,7 @@ int aes_decrypt(unsigned char *dst, const unsigned char *src, size_t SRC_SIZE,
     EVP_CIPHER_CTX_init(de);
 
     EVP_DecryptInit_ex(de, EVP_aes_256_cbc(), NULL, key, iv);
+    EVP_CIPHER_CTX_set_padding(de, 0);
 
     int update_len, final_len;
 
