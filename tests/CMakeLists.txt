@@ -17,6 +17,7 @@ download_project(
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/proba_70.bin ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/proba_30.bin ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/proba_01.bin ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 
 add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR} EXCLUDE_FROM_ALL)
 

@@ -15,7 +15,7 @@ TEST(AESTest, Encrypt)
     const unsigned char iv[16] = {
             1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8
     };
-    const char *data = "3fasf34sv4afg4g3bhmjymd5vhtst";
+    const char *data = "3fasf34sv4afg4g3bhmjymd5vhtstcdt";
     const size_t SIZE = strlen(data);
 
     auto encrypted_data = std::make_unique<unsigned char[]>(SIZE + AES_BLOCK_SIZE);
