@@ -45,3 +45,7 @@ ipch/
 # Other files
 _codelite
 tmp*
+
+# CLion files
+.idea/
+cmake-build-*
