@@ -26,9 +26,14 @@ set(test_SRCS
         file_encryption_test.cpp
         aes_test.cpp
         helper_test.cpp
+        )
+
+set(UTILS_SRCS
         helpers.h
         helpers.cpp
         )
 
+add_library(utils ${UTILS_SRCS})
+
 add_executable(runUnitTests gtest.cpp ${test_SRCS})
-target_link_libraries(runUnitTests gtest fse ${OPENSSL_LIBRARIES} ${sodium_LIBRARY_RELEASE})
+target_link_libraries(runUnitTests gtest fse utils ${OPENSSL_LIBRARIES} ${sodium_LIBRARY_RELEASE})

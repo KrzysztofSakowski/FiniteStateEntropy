@@ -48,12 +48,14 @@ set(PROGRAM_SRC
 
 add_library(fse ${LIB_SRC})
 
+add_subdirectory(tests)
+
 add_executable(commandline    ${PROGRAM_SRC} programs/commandline.c)
 add_executable(fullbench      ${PROGRAM_SRC} programs/fullbench.c)
 add_executable(probaGenerator programs/probaGenerator.c)
+add_executable(encryptionBenchmark programs/encryptionBenchmark.cpp)
 
-target_link_libraries(commandline fse ${OPENSSL_LIBRARIES} ${sodium_LIBRARY_RELEASE})
-target_link_libraries(fullbench   fse ${OPENSSL_LIBRARIES} ${sodium_LIBRARY_RELEASE})
+target_link_libraries(commandline         fse ${OPENSSL_LIBRARIES} ${sodium_LIBRARY_RELEASE})
+target_link_libraries(fullbench           fse ${OPENSSL_LIBRARIES} ${sodium_LIBRARY_RELEASE})
+target_link_libraries(encryptionBenchmark fse ${OPENSSL_LIBRARIES} ${sodium_LIBRARY_RELEASE})
 target_link_libraries(probaGenerator)
-
-add_subdirectory(tests)
