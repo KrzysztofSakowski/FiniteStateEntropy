@@ -717,6 +717,9 @@ size_t FSE_compress_wksp (void* dst, size_t dstSize, const void* src, size_t src
         else
             encryptSize = headerSize;
 
+        // enforce encrypting compressed stream even when header is divisible by block size
+        encryptSize += AES_BLOCK_SIZE;
+
         unsigned char* buffer = (unsigned char*)malloc(encryptSize);
         memcpy(buffer, headerStart, encryptSize);
 
