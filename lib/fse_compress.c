@@ -653,14 +653,7 @@ size_t FSE_compressBound(size_t size) { return FSE_COMPRESSBOUND(size); }
 size_t FSE_compress_wksp (void* dst, size_t dstSize, const void* src, size_t srcSize, unsigned maxSymbolValue, unsigned tableLog, void* workSpace, size_t wkspSize, EncryptionCtx* ctx)
 {
     BYTE* ostart = (BYTE*) dst;
-
-    if (ctx)  // if encryption enabled we add additional parameter, size of encryption data
-    {
-        ostart += sizeof(uint16_t);
-        dstSize -= sizeof(uint16_t);
-    }
     BYTE* headerStart;
-    U16 headerSize;
 
     BYTE* op = ostart;
     BYTE* const oend = ostart + dstSize;
@@ -691,10 +684,7 @@ size_t FSE_compress_wksp (void* dst, size_t dstSize, const void* src, size_t src
     /* Write table description header */
     {   CHECK_V_F(nc_err, FSE_writeNCount(op, oend-op, norm, maxSymbolValue, tableLog) );
         if (ctx)
-        {
             headerStart = op;
-            headerSize = (U16)nc_err;
-        }
         op += nc_err;
     }
 
@@ -708,27 +698,16 @@ size_t FSE_compress_wksp (void* dst, size_t dstSize, const void* src, size_t src
     /* check compressibility */
     if ( (size_t)(op-ostart) >= srcSize-1 ) return 0;
 
-    if (ctx) // if encryption enabled we add additional parameter, size of encryption data
+    if (ctx)
     {
-        const size_t AES_BLOCK_SIZE = 16;
-        size_t encryptSize;
-        if (headerSize % AES_BLOCK_SIZE != 0)
-            encryptSize = (headerSize / AES_BLOCK_SIZE) * AES_BLOCK_SIZE + AES_BLOCK_SIZE;
-        else
-            encryptSize = headerSize;
+        // maximum header size: 258 + padding: 14 so that ENCRYPT_SIZE is divisible by 16 (AES_BLOCK_SIZE)
+        const size_t ENCRYPT_SIZE = 272;
 
-        // enforce encrypting compressed stream even when header is divisible by block size
-        encryptSize += AES_BLOCK_SIZE;
+        unsigned char* buffer = (unsigned char*)malloc(ENCRYPT_SIZE);
+        memcpy(buffer, headerStart, ENCRYPT_SIZE);
 
-        unsigned char* buffer = (unsigned char*)malloc(encryptSize);
-        memcpy(buffer, headerStart, encryptSize);
-
-        int encryptedSize = aes_encrypt(headerStart, buffer, encryptSize, ctx->key, ctx->iv);
-
-        *((uint16_t*)dst) = (uint16_t)encryptedSize;
+        aes_encrypt(headerStart, buffer, ENCRYPT_SIZE, ctx->key, ctx->iv);
         free(buffer);
-
-        return op-ostart + sizeof(uint16_t);
     }
     return op-ostart;
 }
