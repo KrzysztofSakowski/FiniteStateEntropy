@@ -281,13 +281,6 @@ size_t FSE_decompress_usingDTable(void* dst, size_t originalSize,
 size_t FSE_decompress_wksp(void* dst, size_t dstCapacity, const void* cSrc, size_t cSrcSize, FSE_DTable* workSpace, unsigned maxLog, EncryptionCtx* ctx)
 {
     BYTE *istart = (BYTE *) cSrc;
-
-    if (ctx)
-    {
-        istart += sizeof(uint16_t);
-        cSrcSize -= sizeof(uint16_t);
-    }
-
     const BYTE* ip = istart;
     short counting[FSE_MAX_SYMBOL_VALUE+1];
     unsigned tableLog;
@@ -295,10 +288,12 @@ size_t FSE_decompress_wksp(void* dst, size_t dstCapacity, const void* cSrc, size
 
     if  (ctx)
     {
-        uint16_t encryptSize = *((uint16_t*)cSrc);
-        unsigned char* buffer = (unsigned char*)malloc(encryptSize);
-        memcpy(buffer, istart, encryptSize);
-        aes_decrypt(istart, buffer, encryptSize, ctx->key, ctx->iv);
+        // maximum header size: 258 + padding: 14 so that ENCRYPT_SIZE is divisible by 16 (AES_BLOCK_SIZE)
+        const size_t ENCRYPT_SIZE = 272;
+
+        unsigned char* buffer = (unsigned char*)malloc(ENCRYPT_SIZE);
+        memcpy(buffer, istart, ENCRYPT_SIZE);
+        aes_decrypt(istart, buffer, ENCRYPT_SIZE, ctx->key, ctx->iv);
         free(buffer);
     }
 
